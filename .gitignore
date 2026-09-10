@@ -1,0 +1,6 @@
+node_modules/
+
+# Never commit a real key. The negation keeps the template tracked.
+.env
+.env.*
+!.env.example
