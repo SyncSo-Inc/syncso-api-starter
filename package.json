@@ -1,0 +1,13 @@
+{
+  "name": "syncso-api-starter",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "examples": "node --env-file-if-exists=.env src/examples.ts",
+    "search": "node --env-file-if-exists=.env src/search.ts"
+  },
+  "engines": {
+    "node": ">=23.6"
+  }
+}
