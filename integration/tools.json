@@ -2,7 +2,7 @@
   {
     "type": "function",
     "name": "search_experiences",
-    "description": "Search live events, shows, classes, tours, markets and venues (restaurants, bars, museums, parks) in New York City. 2-4 seconds; 1 credit per search of up to 20 results. One search per direction (per interest, time slot or kind of place), several in parallel; pick `limit` per direction. Left to defaults: 10 results per type, both experiences and venues, every upcoming date, whole city, no filters. Each result is a short block: title, category, date and time, venue name and address, neighborhood, price, setting, vibe words, a one-line summary, the booking link, one image URL and an id for get_details. Choose from them for the user; do not relay them all.",
+    "description": "Search live events, shows, classes, tours, markets and venues (restaurants, bars, museums, parks) in New York City. 2-4 seconds; 1 credit per search of up to 20 results. One search per direction (per interest, time slot or kind of place), several in parallel; pick `limit` per direction. Left to defaults: 10 results per type, both experiences and venues, every upcoming date, whole city, no filters. Choose from the results for the user; do not relay them all.",
     "parameters": {
       "type": "object",
       "properties": {
