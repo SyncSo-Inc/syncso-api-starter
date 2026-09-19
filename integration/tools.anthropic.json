@@ -49,7 +49,7 @@
         "time_windows": {
           "type": "array",
           "maxItems": 50,
-          "description": "When the user could go: a list of {start, end} in New York local time, written like '2026-09-20T19:00', with no timezone and no 'Z'. One window per stretch of time. Tonight: one window 18:00-23:59 today. This weekend: two windows, Saturday and Sunday, each 00:00-23:59. Saturday evening: one window 17:00-23:59. Next week: one window from Monday 00:00 to Sunday 23:59. A window must end in the future. Omit only when the user has no time in mind; the search then covers every upcoming date.",
+          "description": "When the user could go: a list of {start, end} in New York local time, written like '2026-09-20T19:00', with no timezone and no 'Z'. One window per stretch of time. Tonight: one window 18:00-23:59 today. This weekend: two windows, Saturday and Sunday, each 00:00-23:59. Saturday evening: one window 17:00-23:59. Next week: one window from Monday 00:00 to Sunday 23:59. Friday evening or Sunday afternoon: two windows, 18:00-23:59 Friday and 12:00-18:00 Sunday; each result then says which window it falls in. A window must end in the future. Omit only when the user has no time in mind; the search then covers every upcoming date. If you do not know today's date, call current_time first.",
           "items": {
             "type": "object",
             "properties": {
@@ -155,6 +155,15 @@
   {
     "name": "list_supported_cities",
     "description": "The cities the catalogue covers and how many experiences and venues each holds, plus the category and vibe vocabularies. Free. Today only New York is stocked; call this if you need to check whether that has changed.",
+    "input_schema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "current_time",
+    "description": "The current date, weekday and time in New York. Free and instant. Call it before building time_windows for 'tonight', 'tomorrow' or 'this weekend' unless the current New York time is already in your instructions.",
     "input_schema": {
       "type": "object",
       "properties": {},

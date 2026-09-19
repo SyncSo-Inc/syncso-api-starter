@@ -11,7 +11,7 @@
 const MCP_URL = process.env.SYNCSO_MCP_URL ?? "https://rtdb.syncso.com/partner/mcp";
 
 export async function executeSyncSoTool(
-  name: "search_experiences" | "get_details" | "list_supported_cities",
+  name: "search_experiences" | "get_details" | "list_supported_cities" | "current_time",
   args: Record<string, unknown>,
   apiKey = process.env.SYNCSO_API_KEY,
 ): Promise<{ text: string; isError: boolean }> {

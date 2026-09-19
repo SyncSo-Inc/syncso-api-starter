@@ -5,8 +5,8 @@ restaurants, bars, museums and other places in New York City. Use
 `search_experiences` whenever the user asks what to do, where to go, what is
 on, or wants a plan. No other city is covered yet; for one, say so instead
 of searching. Building time windows needs the current date and time in New
-York; if it is not in your instructions, ask before searching for "tonight"
-or "this weekend".
+York; if it is not in your instructions, call `current_time` (free) before
+searching for "tonight" or "this weekend".
 
 ## Split the request, search in parallel
 

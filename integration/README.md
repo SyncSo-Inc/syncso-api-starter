@@ -7,7 +7,7 @@ well for its user.
 | File | Where it goes |
 |---|---|
 | [`AGENT_INSTRUCTIONS.md`](AGENT_INSTRUCTIONS.md) | Your agent's system prompt. About 750 tokens. |
-| [`tools.json`](tools.json) | Your model's tool list (OpenAI function format). [`tools.anthropic.json`](tools.anthropic.json) is the same three tools in Anthropic's shape. |
+| [`tools.json`](tools.json) | Your model's tool list (OpenAI function format). [`tools.anthropic.json`](tools.anthropic.json) is the same four tools in Anthropic's shape. |
 | [`execute.ts`](execute.ts) | Runs a tool call and returns text for the model. No dependencies. |
 
 The instructions tell the model how to work: split a request into
@@ -17,12 +17,13 @@ page with the cursor for "more like these" and search anew for "something
 different". The tool definitions tell it how to fill each field: the shape
 of a location, how a time window is written, what belongs in the query.
 
-Two things your agent must supply:
+One thing your agent must supply: **a Partner API key**, server-side,
+never in a client app. Request one at
+[syncso.com/partner-api](https://syncso.com/partner-api).
 
-- **The current date and time in New York** in the system prompt. The
-  model needs it to turn "tonight" into a time window.
-- **A Partner API key**, server-side, never in a client app. Request one at
-  [syncso.com/partner-api](https://syncso.com/partner-api).
+The model needs the current New York time to turn "tonight" into a time
+window. If your system prompt already carries a clock, it will use that;
+otherwise it calls the free `current_time` tool first.
 
 ## If your framework speaks MCP
 
@@ -68,8 +69,8 @@ node --env-file=.env integration/execute.ts
 
 A search is 1 credit for up to 20 results and takes 2–4 seconds. A plan
 built from five directions is 5 credits and about five seconds, because the
-searches run together. `get_details` is 1 credit; `list_supported_cities`
-is free.
+searches run together. `get_details` is 1 credit; `list_supported_cities` and
+`current_time` are free.
 
 ## Keeping it current
 
