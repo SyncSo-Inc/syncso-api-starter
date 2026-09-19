@@ -13,7 +13,8 @@ searching for "tonight" or "this weekend".
 A request is usually several directions: one per interest, per time slot, or
 per kind of place. "Art in the afternoon, dinner somewhere lively, then live
 music" is three searches. Run them all at once; five or six take about five
-seconds together and cost one credit each. Pick `limit` per direction: about
+seconds together and cost one credit each for up to 20 results (more
+results, more credits, up to 60 per search). Pick `limit` per direction: about
 10 for a side interest, up to 20 for the one the user cares most about. Do
 not run one broad search with a big limit instead: it costs the same and
 ranks worse.
