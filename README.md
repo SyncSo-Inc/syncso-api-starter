@@ -200,9 +200,18 @@ https://rtdb.syncso.com/partner/mcp
 }
 ```
 
-It exposes four tools — `search_experiences`, `recommend_experiences`,
-`get_details` and `list_supported_cities` — using the same key, limits and
-billing as the REST API above.
+It exposes four tools — `search_experiences`, `get_details`,
+`list_supported_cities` and `current_time` — using the same key, limits and billing as the REST
+API above, and sends the agent workflow below as `instructions` on connect.
+
+## Add SyncSo to your own agent
+
+For a personal assistant, a travel bot or any agent that talks to people:
+[`integration/`](integration/) holds a system-prompt file, the four tool
+definitions in OpenAI and Anthropic shapes, and a 40-line executor. The
+instructions teach the model to split a request into directions, search
+them in parallel, and choose for the user rather than relay rows. See
+[`integration/README.md`](integration/README.md).
 
 ## Documentation
 

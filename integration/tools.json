@@ -1,0 +1,177 @@
+[
+  {
+    "type": "function",
+    "name": "search_experiences",
+    "description": "Search live events, shows, classes, tours, markets and venues (restaurants, bars, museums, parks) in New York City. 2-4 seconds; 1 credit per 20 results, up to 60 per search. One search per direction (per interest, time slot or kind of place), several in parallel; pick `limit` per direction. Left to defaults: 10 results per type, both experiences and venues, every upcoming date, whole city, no filters. Choose from the results for the user; do not relay them all.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "One direction, as a short phrase describing what the user wants rather than repeating their sentence: 'live jazz', 'rooftop cocktails', 'kid-friendly science museum', 'lively group dinner'. Fold what you know about the user into the wording ('intimate', 'quiet', 'family-friendly', 'cheap'). Put the time in time_windows and the place in location, not here."
+        },
+        "location": {
+          "type": "object",
+          "description": "{\"city\": \"New York\"} for the whole city. Add \"area_text\" to narrow to a neighborhood or borough the user named: {\"city\": \"New York\", \"area_text\": \"Williamsburg\"}. If you have coordinates (the user's position, a hotel) use a circle instead: {\"point\": {\"lat\": 40.73, \"lng\": -73.99, \"radius_km\": 2}}; results then carry a distance. Never send both city and point.",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "\"New York\". NYC, Manhattan, Brooklyn and the other boroughs are accepted too. No other city is covered yet."
+            },
+            "area_text": {
+              "type": "string",
+              "description": "A neighborhood or borough, e.g. 'Williamsburg', 'Lower East Side', 'Queens'. Only with city. If it matches nothing the search widens to the whole city and the result says so."
+            },
+            "point": {
+              "type": "object",
+              "description": "Circle search around a coordinate; radius_km 0.1-50. Results carry distance_km.",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lng": {
+                  "type": "number"
+                },
+                "radius_km": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 50
+                }
+              },
+              "required": [
+                "lat",
+                "lng",
+                "radius_km"
+              ]
+            }
+          }
+        },
+        "time_windows": {
+          "type": "array",
+          "maxItems": 50,
+          "description": "When the user could go: a list of {start, end} in New York local time, written like '2026-09-20T19:00', with no timezone and no 'Z'. One window per stretch of time. Tonight: one window 18:00-23:59 today. This weekend: two windows, Saturday and Sunday, each 00:00-23:59. Saturday evening: one window 17:00-23:59. Next week: one window from Monday 00:00 to Sunday 23:59. Friday evening or Sunday afternoon: two windows, 18:00-23:59 Friday and 12:00-18:00 Sunday; each result then says which window it falls in. A window must end in the future. Omit only when the user has no time in mind; the search then covers every upcoming date. If you do not know today's date, call current_time first.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "string",
+                "description": "e.g. 2026-09-20T19:00"
+              },
+              "end": {
+                "type": "string",
+                "description": "e.g. 2026-09-20T23:59"
+              }
+            },
+            "required": [
+              "start",
+              "end"
+            ]
+          }
+        },
+        "result_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "experiences",
+              "venues"
+            ]
+          },
+          "description": "[\"experiences\"] for things that happen at a time (a show, a class, a market, a tour); [\"venues\"] for places (a bar, a restaurant, a museum, a park). Pick one per direction. Omitted, both come back."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60,
+          "description": "Results for this search, per result type. Default 10. About 10 for a side interest, up to 20 for the direction the user cares most about; up to 20 still costs 1 credit."
+        },
+        "is_free": {
+          "type": "boolean",
+          "description": "true keeps only free experiences, false only paid ones. Rows with unknown price are left out either way. Use for a tight budget."
+        },
+        "environment_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "indoor",
+              "outdoor",
+              "mixed"
+            ]
+          },
+          "description": "Keep only experiences in these settings: indoor, outdoor, mixed. Use for weather."
+        },
+        "ranking": {
+          "type": "object",
+          "description": "Optional nudges, not sorts: prefer_popularity moves well-known things earlier, prefer_uniqueness unusual ones, prefer_credibility established ones. Leave out unless the user's taste points that way.",
+          "properties": {
+            "prefer_popularity": {
+              "type": "boolean"
+            },
+            "prefer_credibility": {
+              "type": "boolean"
+            },
+            "prefer_uniqueness": {
+              "type": "boolean"
+            }
+          }
+        },
+        "cursor": {
+          "type": "string",
+          "description": "The cursor from a previous result, for the next page of the SAME search with every other argument unchanged. Nothing repeats and the order does not shift. Expires after 15 minutes; if expired, run the original search again without it."
+        }
+      },
+      "required": [
+        "query",
+        "location"
+      ]
+    }
+  },
+  {
+    "type": "function",
+    "name": "get_details",
+    "description": "Everything about one experience or venue the user asked about, by the id from a search result: full schedule, host, venue hours, amenities and phone, all images and every source link. Under 1 second, 1 credit. For a result the user picked, not for every row.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The id shown on a search result."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "experience",
+            "venue"
+          ],
+          "description": "experience for a row from the EXPERIENCES list, venue for one from VENUES."
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ]
+    }
+  },
+  {
+    "type": "function",
+    "name": "list_supported_cities",
+    "description": "The cities the catalogue covers and how many experiences and venues each holds, plus the category and vibe vocabularies. Free. Today only New York is stocked; call this if you need to check whether that has changed.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "type": "function",
+    "name": "current_time",
+    "description": "The current date, weekday and time in New York. Free and instant. Call it before building time_windows for 'tonight', 'tomorrow' or 'this weekend' unless the current New York time is already in your instructions.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  }
+]
