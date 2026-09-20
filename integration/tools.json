@@ -2,7 +2,7 @@
   {
     "type": "function",
     "name": "search_experiences",
-    "description": "Search live events, shows, classes, tours, markets and venues (restaurants, bars, museums, parks) in New York City. 2-4 seconds; 1 credit per 20 results, up to 60 per search. One search per direction (per interest, time slot or kind of place), several in parallel; pick `limit` per direction. Left to defaults: 10 results per type, both experiences and venues, every upcoming date, whole city, no filters.\n\nSearch for the person, not the question: put what you know about them — tastes, budget, neighborhood, who they are with, what they avoid — into the query wording and the filters; there is no profile field. Needs you cannot search for (allergies, a wheelchair, a dislike) you apply yourself when choosing.\n\nThen choose two to four results per search for this user and say why; do not relay the rows. Times shown are New York local — never convert them, and never say whether tickets are available.",
+    "description": "Search experiences happening in New York — events, shows, classes, tours, markets — and the places they happen in. 2-4 seconds; 1 credit per 20 results, up to 60 per search. One search per direction (per interest, time slot or kind of place), several in parallel; pick `limit` per direction. Left to defaults: 10 results per type, both experiences and venues, every upcoming date, whole city, no filters.\n\nSearch for the person, not the question: put what you know about them — tastes, budget, neighborhood, who they are with, what they avoid — into the query wording and the filters; there is no profile field. Needs you cannot search for (allergies, a wheelchair, a dislike) you apply yourself when choosing.\n\nThen choose two to four results per search for this user and say why; do not relay the rows. Times shown are New York local — never convert them, and never say whether tickets are available.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -50,7 +50,7 @@
         "time_windows": {
           "type": "array",
           "maxItems": 50,
-          "description": "When the user could go: a list of {start, end} in New York local time, written like '2026-09-20T19:00', with no timezone and no 'Z'. One window per stretch of time. Tonight: one window 18:00-23:59 today. This weekend: two windows, Saturday and Sunday, each 00:00-23:59. Saturday evening: one window 17:00-23:59. Next week: one window from Monday 00:00 to Sunday 23:59. Friday evening or Sunday afternoon: two windows, 18:00-23:59 Friday and 12:00-18:00 Sunday; each result then says which window it falls in. A window must end in the future. Omit only when the user has no time in mind; the search then covers every upcoming date. If you do not know today's date, call current_time first.",
+          "description": "When the user could go: a list of {start, end} in New York local time, written like '2026-09-20T19:00', with no timezone and no 'Z'. One window per stretch of time. Tonight: one window 18:00-23:59 today. This weekend: two windows, Saturday and Sunday, each 00:00-23:59. Saturday evening: one window 17:00-23:59. Next week: one window from Monday 00:00 to Sunday 23:59. Friday evening or Sunday afternoon: two windows, 18:00-23:59 Friday and 12:00-18:00 Sunday; each result then says which window it falls in. A window must end in the future. Omit only when the user has no time in mind; the search then covers every upcoming date. Today's date in New York is given to you on connect and repeated on every result.",
           "items": {
             "type": "object",
             "properties": {
@@ -78,7 +78,7 @@
               "venues"
             ]
           },
-          "description": "[\"experiences\"] for things that happen at a time (a show, a class, a market, a tour); [\"venues\"] for places (a bar, a restaurant, a museum, a park). Pick one per direction. Omitted, both come back."
+          "description": "[\"experiences\"] for things that happen at a time (a show, a class, a market, a tour) — the usual choice. [\"venues\"] for standing places with no event attached (a bar, a restaurant, a museum, a park), when the user wants somewhere to go rather than something to attend. Pick one per direction. Omitted, both come back."
         },
         "limit": {
           "type": "integer",
@@ -131,47 +131,41 @@
   {
     "type": "function",
     "name": "get_details",
-    "description": "Everything about one experience or venue the user asked about, by the id from a search result: full schedule, host, venue hours, amenities and phone, all images and every source link. Under 1 second, 1 credit. For a result the user picked, not for every row.",
+    "description": "Everything about the results the user asked about, by the ids from a search: full schedule, host, venue hours, amenities and phone, all images and every source link.\n\nAsk for every one you need in a SINGLE call — the whole call costs 1 credit however many ids it carries, and they are fetched together. Calling it once per id costs a credit each. For the results the user is choosing between, not for every row you got.",
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "The id shown on a search result."
-        },
-        "kind": {
-          "type": "string",
-          "enum": [
-            "experience",
-            "venue"
-          ],
-          "description": "experience for a row from the EXPERIENCES list, venue for one from VENUES."
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "The results to look up, up to 20 at once. One entry per id.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The id shown on a search result."
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "experience",
+                  "venue"
+                ],
+                "description": "experience for a row from the EXPERIENCES list, venue for one from VENUES."
+              }
+            },
+            "required": [
+              "id",
+              "kind"
+            ]
+          }
         }
       },
       "required": [
-        "id",
-        "kind"
+        "items"
       ]
-    }
-  },
-  {
-    "type": "function",
-    "name": "list_supported_cities",
-    "description": "The cities the catalogue covers and how many experiences and venues each holds, plus the category and vibe vocabularies. Free. Today only New York is stocked; call this if you need to check whether that has changed.",
-    "parameters": {
-      "type": "object",
-      "properties": {},
-      "required": []
-    }
-  },
-  {
-    "type": "function",
-    "name": "current_time",
-    "description": "The current date, weekday and time in New York. Free and instant. Call it before building time_windows for 'tonight', 'tomorrow' or 'this weekend' unless the current New York time is already in your instructions.",
-    "parameters": {
-      "type": "object",
-      "properties": {},
-      "required": []
     }
   }
 ]

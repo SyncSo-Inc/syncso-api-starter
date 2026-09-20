@@ -33,7 +33,7 @@ done. The tool definitions and the full guidance arrive on connect.
 
 **If it doesn't**, add [`tools.json`](tools.json) to your model's tool list
 (OpenAI function format; [`tools.anthropic.json`](tools.anthropic.json) is
-the same four tools in Anthropic's shape) and route the calls through
+the same two tools in Anthropic's shape) and route the calls through
 [`execute.ts`](execute.ts):
 
 ```ts
@@ -53,14 +53,18 @@ searches go out in parallel:
 node --env-file=.env integration/execute.ts
 ```
 
-## The four tools
+## The two tools
 
 | Tool | What | Cost |
 |---|---|---|
 | `search_experiences` | Events, shows, classes, restaurants, bars, museums | 1 credit per 20 results |
-| `get_details` | Everything about one result the user picked | 1 credit |
-| `current_time` | The clock in New York, for building time windows | free |
-| `list_supported_cities` | What the catalogue covers | free |
+| `get_details` | Everything about results the user picked, up to 20 ids in one call | 1 credit |
+
+Two, deliberately. Every tool definition is re-sent on every model request
+for the life of your integration, alongside whatever else you have mounted,
+so a tool has to earn that standing cost. The New York clock arrives with
+the connection and on every result rather than as a tool; the city list is
+one city.
 
 A search takes 2–4 seconds. A plan built from five directions is 5 credits
 and about five seconds, because the searches run together.
