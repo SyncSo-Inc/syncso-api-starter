@@ -200,9 +200,14 @@ https://rtdb.syncso.com/partner/mcp
 }
 ```
 
-It exposes four tools — `search_experiences`, `get_details`,
-`list_supported_cities` and `current_time` — using the same key, limits and billing as the REST
-API above, and sends the agent workflow below as `instructions` on connect.
+It exposes two tools — `search_experiences` and `get_details` — using the
+same key, limits and billing as the REST API above, and sends the agent
+workflow below as `instructions` on connect.
+
+End users who connect with their own account (rather than your key) are
+additionally offered payment tools, so they can subscribe without leaving
+their assistant. Those never appear for a partner key: your users are
+billed by you, not by us.
 
 ## Add SyncSo to your own agent
 
