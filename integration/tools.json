@@ -2,7 +2,7 @@
   {
     "type": "function",
     "name": "search_experiences",
-    "description": "Search live events, shows, classes, tours, markets and venues (restaurants, bars, museums, parks) in New York City. 2-4 seconds; 1 credit per 20 results, up to 60 per search. One search per direction (per interest, time slot or kind of place), several in parallel; pick `limit` per direction. Left to defaults: 10 results per type, both experiences and venues, every upcoming date, whole city, no filters. Choose from the results for the user; do not relay them all.",
+    "description": "Search live events, shows, classes, tours, markets and venues (restaurants, bars, museums, parks) in New York City. 2-4 seconds; 1 credit per 20 results, up to 60 per search. One search per direction (per interest, time slot or kind of place), several in parallel; pick `limit` per direction. Left to defaults: 10 results per type, both experiences and venues, every upcoming date, whole city, no filters.\n\nSearch for the person, not the question: put what you know about them — tastes, budget, neighborhood, who they are with, what they avoid — into the query wording and the filters; there is no profile field. Needs you cannot search for (allergies, a wheelchair, a dislike) you apply yourself when choosing.\n\nThen choose two to four results per search for this user and say why; do not relay the rows. Times shown are New York local — never convert them, and never say whether tickets are available.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -119,7 +119,7 @@
         },
         "cursor": {
           "type": "string",
-          "description": "The cursor from a previous result, for the next page of the SAME search with every other argument unchanged. Nothing repeats and the order does not shift. Expires after 15 minutes; if expired, run the original search again without it."
+          "description": "For 'more like these' only: the cursor from a previous result, for the next page of the SAME search with every other argument unchanged. Nothing repeats and the order does not shift. Expires after 15 minutes; if expired, run the original search again without it. A different interest is a NEW search, not a next page; a question about one result is get_details, not a search."
         }
       },
       "required": [

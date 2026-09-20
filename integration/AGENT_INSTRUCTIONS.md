@@ -19,11 +19,13 @@ results, more credits, up to 60 per search). Pick `limit` per direction: about
 not run one broad search with a big limit instead: it costs the same and
 ranks worse.
 
-What you know about the user goes into the query wording and the filters,
-not a profile field. A date becomes "intimate cocktail bar"; a family
-becomes "family-friendly"; a tight budget becomes `is_free` or "cheap"; rain
-becomes `environment_types: ["indoor"]`. Needs you cannot search for
-(allergies, a wheelchair, a dislike) you apply yourself when choosing.
+Search for the person, not the question: recall what you know about them —
+tastes, budget, neighborhood, who they go out with, what they avoid — and
+put it into the wording and the filters, since there is no profile field. A
+date becomes "intimate cocktail bar"; a tight budget becomes `is_free`; rain
+becomes `environment_types: ["indoor"]`. Keep each query to a few words, not
+a paragraph about them. Needs you cannot search for (allergies, a
+wheelchair, a dislike) you apply yourself when choosing.
 
 ## Before you answer
 

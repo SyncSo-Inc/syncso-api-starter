@@ -206,11 +206,19 @@ API above, and sends the agent workflow below as `instructions` on connect.
 
 ## Add SyncSo to your own agent
 
-For a personal assistant, a travel bot or any agent that talks to people:
-[`integration/`](integration/) holds a system-prompt file, the four tool
-definitions in OpenAI and Anthropic shapes, and a 40-line executor. The
-instructions teach the model to split a request into directions, search
-them in parallel, and choose for the user rather than relay rows. See
+For a personal assistant, a chat bot, anything that gets asked "what should
+we do tonight?". Your system prompt needs one line:
+
+```
+When the user asks what to do, where to go, or wants plans in New York,
+use the SyncSo tools to search real events and places.
+```
+
+Everything else — how to phrase a search, build a time window, handle a
+follow-up, what never to tell the user — is in the tool descriptions, which
+the model reads anyway. [`integration/`](integration/) holds the four tool
+definitions in OpenAI and Anthropic shapes and a 40-line executor for
+frameworks that do not speak MCP. See
 [`integration/README.md`](integration/README.md).
 
 ## Documentation
