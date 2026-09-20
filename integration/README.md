@@ -1,35 +1,24 @@
 # Add SyncSo to your agent
 
-Three files, one workflow. They let a personal assistant, a travel bot or
-any agent that talks to people find things to do in New York and choose
-well for its user.
+For a personal assistant, a chat bot, anything that talks to people and
+gets asked "what should we do tonight?".
 
-| File | Where it goes |
-|---|---|
-| [`AGENT_INSTRUCTIONS.md`](AGENT_INSTRUCTIONS.md) | Your agent's system prompt. About 750 tokens. |
-| [`tools.json`](tools.json) | Your model's tool list (OpenAI function format). [`tools.anthropic.json`](tools.anthropic.json) is the same four tools in Anthropic's shape. |
-| [`execute.ts`](execute.ts) | Runs a tool call and returns text for the model. No dependencies. |
+## Your system prompt needs one line
 
-The instructions tell the model how to work: split a request into
-directions, search them all at once, pick a `limit` per direction, choose
-two to four results per direction for the user instead of relaying rows,
-page with the cursor for "more like these" and search anew for "something
-different". The tool definitions tell it how to fill each field: the shape
-of a location, how a time window is written, what belongs in the query.
+```
+When the user asks what to do, where to go, or wants plans in New York,
+use the SyncSo tools to search real events and places.
+```
 
-One thing your agent must supply: **a Partner API key**, server-side,
-never in a client app. Request one at
-[syncso.com/partner-api](https://syncso.com/partner-api).
+Everything else — how to phrase a search, how to build a time window, how
+many results to fetch, what to do with "more like these", what never to
+tell the user — lives in the tool descriptions, which your model reads when
+it is choosing and filling a tool. It does not sit in your prompt.
 
-The model needs the current New York time to turn "tonight" into a time
-window. If your system prompt already carries a clock, it will use that;
-otherwise it calls the free `current_time` tool first.
+## Then wire up the tools
 
-## If your framework speaks MCP
-
-You need none of these files. Point it at the endpoint; the same
-instructions arrive on `initialize` and the same tool definitions on
-`tools/list`.
+**If your framework speaks MCP**, point it at the endpoint and you are
+done. The tool definitions and the full guidance arrive on connect.
 
 ```json
 {
@@ -42,11 +31,10 @@ instructions arrive on `initialize` and the same tool definitions on
 }
 ```
 
-## If it doesn't
-
-Paste `AGENT_INSTRUCTIONS.md` into the system prompt, add `tools.json` to
-the model's tools, and route the model's tool calls through
-`executeSyncSoTool`:
+**If it doesn't**, add [`tools.json`](tools.json) to your model's tool list
+(OpenAI function format; [`tools.anthropic.json`](tools.anthropic.json) is
+the same four tools in Anthropic's shape) and route the calls through
+[`execute.ts`](execute.ts):
 
 ```ts
 import { executeSyncSoTool } from "./execute.ts";
@@ -56,24 +44,42 @@ const { text, isError } = await executeSyncSoTool(call.name, call.arguments);
 // hand `text` back to the model as the tool result
 ```
 
-It posts to the same MCP endpoint over plain HTTP and returns compact text
-(about 120 tokens per result), so a page of 20 costs the model ~2,500 tokens
-rather than the ~18,000 the raw REST JSON would. Run the file directly to
-see three directions searched in parallel:
+It posts to the MCP endpoint over plain HTTP and returns compact text,
+about 120 tokens per result, so a page of 20 costs your model ~2,500 tokens
+rather than the ~18,000 raw JSON would. Run it directly to watch three
+searches go out in parallel:
 
 ```bash
 node --env-file=.env integration/execute.ts
 ```
 
-## What it costs
+## The four tools
 
-A search is 1 credit for up to 20 results and takes 2–4 seconds. A plan
-built from five directions is 5 credits and about five seconds, because the
-searches run together. `get_details` is 1 credit; `list_supported_cities` and
-`current_time` are free.
+| Tool | What | Cost |
+|---|---|---|
+| `search_experiences` | Events, shows, classes, restaurants, bars, museums | 1 credit per 20 results |
+| `get_details` | Everything about one result the user picked | 1 credit |
+| `current_time` | The clock in New York, for building time windows | free |
+| `list_supported_cities` | What the catalogue covers | free |
+
+A search takes 2–4 seconds. A plan built from five directions is 5 credits
+and about five seconds, because the searches run together.
+
+## What you must supply
+
+A Partner API key, server-side, never in a client app. Request one at
+[syncso.com/partner-api](https://syncso.com/partner-api).
+
+## The long version
+
+[`AGENT_INSTRUCTIONS.md`](AGENT_INSTRUCTIONS.md) is the same guidance
+written out in full, ~800 tokens. You do not need it — it is what MCP
+clients receive automatically, kept here so you can read what your model is
+being told, and paste it if you would rather have it in the prompt than
+rely on the tool descriptions.
 
 ## Keeping it current
 
-`AGENT_INSTRUCTIONS.md` and `tools.json` are copies of what the MCP server
-sends. When they change here, the server has changed too, so update your
-copy when you update your key or on a release note.
+These files are copies of what the MCP server sends. When they change here,
+the server has changed too; update your copy when you update your key or on
+a release note.
