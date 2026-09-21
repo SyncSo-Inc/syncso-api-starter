@@ -129,7 +129,7 @@
   },
   {
     "name": "get_details",
-    "description": "Everything about the results the user asked about, by the ids from a search: full schedule, host, venue hours, amenities and phone, all images and every source link.\n\nAsk for every one you need in a SINGLE call — the whole call costs 1 credit however many ids it carries, and they are fetched together. Calling it once per id costs a credit each. For the results the user is choosing between, not for every row you got.",
+    "description": "Everything about the results the user asked about, by the ids from a search: full schedule, host, venue hours, amenities and phone, all images and every source link.\n\nAsk for every one you need in a SINGLE call — the whole call costs 1 credit however many ids it carries, and they are fetched together. Calling it once per id costs a credit each. For the results the user is choosing between, not for every row you got.\n\nPictures come back inline and are shown to the user. One id alone returns up to three of its pictures; several ids share the space and get one each. So: while the user is still choosing, batch; once they have settled on one and want to see it, ask for that id by itself.",
     "input_schema": {
       "type": "object",
       "properties": {
