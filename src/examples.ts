@@ -13,7 +13,7 @@
  * of the body you would send is never a mystery.
  */
 import { coverImage, MissingApiKeyError, SyncSoClient, SyncSoError } from "./client.ts";
-import type { Experience, SearchResponse, Venue } from "./client.ts";
+import type { AskResponse, Experience, SearchResponse, Venue } from "./client.ts";
 
 // ---------------------------------------------------------------------------
 // Time windows are wall-clock IN THE TARGET CITY and carry no UTC offset.
@@ -129,9 +129,10 @@ function printVenues(rows: Venue[]): void {
   });
 }
 
-function footer(res: SearchResponse, started: number): void {
+function footer(res: SearchResponse | AskResponse, started: number): void {
   const secs = ((Date.now() - started) / 1000).toFixed(1);
-  console.log(`— ${secs}s · ${res.meta.credits_charged ?? "?"} credit(s) · ${res.request_id}`);
+  const credits = res.meta?.credits_charged ?? "?";
+  console.log(`— ${secs}s · ${credits} credit(s) · ${res.request_id ?? "—"}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -377,143 +378,150 @@ async function featuredPaged(): Promise<void> {
 }
 
 // === /local-intelligence =================================================
-// The same catalogue ranked for one person, every result carrying a reason
-// you can show verbatim. 16-33s and 13-20 credits for 20 results, so it earns
-// its keep only
-// when you actually know something about the person.
+// Ask what someone should do, in the words they would use. Everything on in
+// that window and area is read against the request -- a thousand rows and
+// more -- and comes back ranked, each result carrying a sentence you can
+// show verbatim. About 13s and 6-9 credits at the default effort, against
+// under 2s and 1 for search, so it earns its keep when you have something to
+// say about the person.
+//
+// Two rules the shape turns on: send the whole request as ONE `message`
+// however many interests it names, and show the results in the order given.
+// The order is the reading; picking your own favourites out of the middle
+// discards the only part of the work you cannot repeat from a list.
 
-/** 11. A group, with interests and things to avoid. */
+/** Results print themselves: the sentence is already written for the ask. */
+function printAnswer(res: AskResponse): void {
+  if (res.understood) console.log(`${res.understood}\n`);
+  res.results.forEach((row, i) => {
+    const where = row.venue ?? row.neighborhood ?? "";
+    const whenText = row.ongoing && row.end
+      ? `on now, through ${row.end.slice(0, 10)}`
+      : row.start?.slice(0, 16).replace("T", " ") ?? "";
+    const cost = row.is_free ? "Free"
+      : row.price_min != null ? `$${row.price_min}` : "";
+    console.log(`${i + 1}. ${row.title}`);
+    console.log(`   ${[whenText, where, cost].filter(Boolean).join(" · ")}`);
+    // The reason, not a placeholder -- rewriting it costs the reader the
+    // reasoning, and writing your own from the title loses what the row says.
+    if (row.reason) console.log(`   why: ${row.reason}`);
+    if (row.image) console.log(`   image: ${row.image}`);
+    if (row.link) console.log(`   ${row.link}`);
+    console.log("");
+  });
+  // Each inference the request left open. Show them where they can be
+  // corrected: a wrong reading is visible here rather than silent.
+  if (res.assumptions.length) {
+    console.log(`assumptions: ${res.assumptions.join(" ")}\n`);
+  }
+}
+
+/** 11. A group, said in one sentence rather than split into fields. */
 async function liThreeFriends(): Promise<void> {
   const body = {
-    query: "What should the three of us do tonight?",
-    location: { city: "New York" },
-    time_windows: [tonight()],
-    result_types: ["experiences"] as const,
-    limit: 20,
-    user_context: {
-      preferences_text:
-        "Visiting NYC with two friends. We're all in our mid-20s and staying in "
-        + "SoHo. We want something social but not too touristy.",
-      interests: ["live music", "bars", "meeting people"],
-      avoid: ["tourist traps", "anything formal"],
-      profile: { party: "friends" as const, budget: "$$" as const, age_range: "25-34", home_area: "SoHo" },
-    },
+    message:
+      "Three of us are visiting NYC for the first time, mid-twenties, staying "
+      + "in SoHo, out tonight. Something social but not touristy, around $$ a "
+      + "head. We like live music and bars and would rather not do anything formal.",
+    limit: 10,
   };
   head(11, "Local Intelligence — three friends, first time in NYC", "/local-intelligence", body);
-  console.log("(20-30s: ranking the catalogue for these three people)\n");
+  console.log("(about 13s: reading the catalogue against this request)\n");
   const started = Date.now();
-  const res = await client.recommend(body);
-  printExperiences(res.experiences);
-  if (!res.experiences.length) console.log("No results.\n");
+  const res = await client.ask(body);
+  printAnswer(res);
+  if (!res.results.length) console.log("No results.\n");
   footer(res, started);
 }
 
 /**
- * 12. Hard constraints, answered with venues. "Where can we all go" is a
- * question about a room that seats six and has step-free access, not about
- * something scheduled.
+ * 12. The constraints a search cannot express. A wheelchair, a vegan, someone
+ * who does not drink: these are read and reasoned about, not matched as text,
+ * and they are the most useful thing you can send.
  */
 async function liConstraints(): Promise<void> {
   const body = {
-    query: "Where can we all actually go for the birthday?",
-    location: { city: "New York" },
-    time_windows: thisWeekend(),
-    result_types: ["venues"] as const,
-    limit: 20,
-    user_context: {
-      preferences_text:
-        "Six friends celebrating a birthday. Two are vegan, one does not drink, "
-        + "and one uses a wheelchair so step-free access is required. They want "
-        + "to sit together and talk, not stand in a crowd.",
-      interests: ["group dining", "cocktails", "live music"],
-      avoid: ["standing room only", "loud clubs"],
-      profile: { party: "friends" as const, budget: "$$$" as const, home_area: "Lower East Side" },
-    },
+    message:
+      "Six friends want somewhere to celebrate a birthday this weekend. Two "
+      + "are vegan, one does not drink, one uses a wheelchair so step-free "
+      + "access is required. They want to sit together and talk, not stand in "
+      + "a crowd. Under $60 a head.",
+    place: "Lower East Side",
+    effort: "high" as const,
+    limit: 10,
   };
-  head(12, "Local Intelligence — six friends, one wheelchair, two vegan (venues)", "/local-intelligence", body);
-  console.log("(20-30s)\n");
+  head(12, "Local Intelligence — hard constraints, read not matched", "/local-intelligence", body);
+  console.log("(`effort: high` -- a request with real constraints to reason about)\n");
   const started = Date.now();
-  const res = await client.recommend(body);
-  printVenues(res.venues);
-  if (!res.venues.length) console.log("No results.\n");
-  footer(res, started);
-}
-
-/** 13. A summary over the whole set, for a chat reply rather than a list. */
-async function liWithSummary(): Promise<void> {
-  const body = {
-    query: "Where should I take her tonight?",
-    location: { city: "New York" },
-    time_windows: [tonight()],
-    result_types: ["experiences"] as const,
-    limit: 20,
-    include_summary: true,
-    user_context: {
-      preferences_text:
-        "A first date. Somewhere quiet enough to talk but with something to look "
-        + "at or do, so there is no pressure to fill silences. Under $150 for two.",
-      interests: ["conversation", "art", "wine"],
-      avoid: ["loud clubs", "standing room only"],
-      profile: { party: "couple" as const, budget: "$$$" as const, home_area: "West Village" },
-    },
-  };
-  head(13, "Local Intelligence — a first date, with a written summary", "/local-intelligence", body);
-  console.log("(20-30s)\n");
-  const started = Date.now();
-  const res = await client.recommend(body);
-  if (res.summary) console.log(`Summary: ${res.summary}\n`);
-  printExperiences(res.experiences);
+  const res = await client.ask(body);
+  printAnswer(res);
+  if (!res.results.length) console.log("No results.\n");
   footer(res, started);
 }
 
 /**
- * 14. `intelligence.intent: false` — retrieval uses the query verbatim
- * instead of interpreting it first. Several times faster and cheaper, and
- * results are still ranked and explained.
+ * 13. A calendar is a list. Two windows with a gap between them do not search
+ * the gap -- send one span covering both and you answer with the day nobody
+ * asked about.
  */
-async function liFastPath(): Promise<void> {
+async function liTwoWindows(): Promise<void> {
   const body = {
-    query: "rooftop bar with a view",
-    location: { city: "New York" },
-    time_windows: [tonight()],
-    result_types: ["experiences", "venues"] as const,
-    limit: 20,
-    intelligence: { intent: false },
-    user_context: {
-      preferences_text: "Out-of-town colleagues, want somewhere with a skyline view.",
-      profile: { party: "team" as const, budget: "$$$" as const },
-    },
+    message:
+      "Something to do with my parents while they are visiting. They are in "
+      + "their seventies and cannot be on their feet for long.",
+    place: "Upper West Side",
+    // `thisWeekend()` is Friday evening and Saturday daytime -- two windows
+    // with Saturday morning between them, which is not searched. One span
+    // from Friday 17:00 to Saturday 23:59 would answer with it.
+    when: thisWeekend(),
+    limit: 10,
   };
-  head(14, "Local Intelligence — the fast path (intent: false)", "/local-intelligence", body);
-  console.log("(faster and cheaper: the query is used verbatim for retrieval)\n");
+  head(13, "Local Intelligence — two windows, and the gap between them", "/local-intelligence", body);
+  console.log("(two windows; the hours between them are not searched)\n");
   const started = Date.now();
-  const res = await client.recommend(body);
-  printExperiences(res.experiences);
-  printVenues(res.venues);
+  const res = await client.ask(body);
+  printAnswer(res);
+  if (!res.results.length) console.log("No results.\n");
   footer(res, started);
 }
 
 /**
- * 15. No `user_context` at all — an unpersonalized AI ranking. Useful when
- * you have a query but know nothing about who is asking.
+ * 14. A place the gazetteer does not hold. A landmark, a street address, a
+ * hotel, a transit line: `place` takes any of them.
  */
-async function liNoContext(): Promise<void> {
+async function liLandmark(): Promise<void> {
   const body = {
-    query: "something memorable to do with kids on a rainy afternoon",
-    location: { city: "New York" },
-    time_windows: [tomorrow()],
-    result_types: ["experiences"] as const,
-    limit: 20,
+    message: "Somewhere quiet to read for an hour this afternoon.",
+    place: "near the Guggenheim",
+    radius_mi: 1,
+    effort: "low" as const,
+    limit: 10,
   };
-  head(15, "Local Intelligence — no user context, ranked anyway", "/local-intelligence", body);
-  console.log("(20-30s)\n");
+  head(14, "Local Intelligence — a landmark, not a neighbourhood", "/local-intelligence", body);
+  console.log("(`effort: low` -- a plain ask, nothing to reason about)\n");
   const started = Date.now();
-  const res = await client.recommend(body);
-  printExperiences(res.experiences);
-  if (!res.experiences.length) {
-    console.log(`No results. meta.empty_reason: ${res.meta.empty_reason ?? "none given"}\n`);
+  const res = await client.ask(body);
+  printAnswer(res);
+  if (!res.results.length) console.log("No results.\n");
+  footer(res, started);
+}
+
+/** 15. The next page: the same body, plus the cursor. Nothing else changes. */
+async function liNextPage(): Promise<void> {
+  const body = { message: "what is on tonight", limit: 10 };
+  head(15, "Local Intelligence — the next page", "/local-intelligence", body);
+  const started = Date.now();
+  const first = await client.ask(body);
+  printAnswer(first);
+  if (!first.next_cursor) {
+    console.log("No further pages.\n");
+    footer(first, started);
+    return;
   }
-  footer(res, started);
+  console.log(`--- page 2 (cursor ${first.next_cursor.slice(0, 12)}...) ---\n`);
+  const second = await client.ask({ ...body, cursor: first.next_cursor });
+  printAnswer(second);
+  footer(second, started);
 }
 
 // ---------------------------------------------------------------------------
@@ -521,7 +529,7 @@ async function liNoContext(): Promise<void> {
 const EXAMPLES = [
   searchBasic, searchRadius, searchBrowse, searchVenues, searchRankedAndPaged,
   featuredCity, featuredTonight, featuredSoonest, featuredWeekend, featuredPaged,
-  liThreeFriends, liConstraints, liWithSummary, liFastPath, liNoContext,
+  liThreeFriends, liConstraints, liTwoWindows, liLandmark, liNextPage,
 ];
 
 const GROUPS: Record<string, number[]> = {
