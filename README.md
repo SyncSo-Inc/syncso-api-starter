@@ -48,18 +48,21 @@ plan and above.
 | 9 | This weekend | a weekend module, two windows |
 | 10 | Tomorrow, then page 2 | cursor paging, and the pool's real size |
 
-**`/local-intelligence`** — the same catalogue ranked for one person, each
-result carrying a reason you can show verbatim. 16-33s, and priced on the
-reasoning rather than the row count — 20 results cost 13-20 credits, where
-10 results cost 9.
+**`/local-intelligence`** — ask what someone should do, in the words they
+would use. Everything on in that window and area is read against the request
+and comes back ranked, each result carrying a sentence you can show verbatim.
+About 13s and 6-9 credits at the default effort.
+
+One request is one call, however many interests it names, and the order it
+comes back in is the reading — do not split it, and do not re-rank it.
 
 | | | |
 |---|---|---|
-| 11 | Three friends, first time in NYC | interests and things to avoid |
-| 12 | Six friends, one wheelchair, two vegan | hard constraints, answered with venues |
-| 13 | A first date | `include_summary` for a chat reply rather than a list |
-| 14 | Rooftop with a view | `intelligence.intent: false` — the fast, cheap path |
-| 15 | Rainy afternoon with kids | no `user_context` at all: ranked anyway |
+| 11 | Three friends, first time in NYC | the whole ask as one sentence |
+| 12 | Six friends, one wheelchair, two vegan | constraints a search cannot express |
+| 13 | Parents visiting, two windows | the hours between them are not searched |
+| 14 | Near the Guggenheim | a landmark rather than a neighbourhood |
+| 15 | What is on tonight, then page 2 | the same body plus the cursor |
 
 Each prints its request body, then the results, then latency and credits.
 Examples 6-10 need the Growth tier; 11-15 need the `intelligence` scope.
@@ -129,22 +132,30 @@ const results = await client.featured({
 });
 ```
 
-`client.recommend()` ranks for one person and explains each result. Costs more
-than `search` (16–33s and 13–20 credits for 20 results, against under 2s and
-1), so it earns its keep once you know something about them:
+`client.ask()` takes the request as a sentence and answers it ranked, each
+result carrying its own `reason`. Costs more than `search` (about 13s and 6–9
+credits at the default effort, against under 2s and 1), so it earns its keep
+once you have something to say about the person:
 
 ```ts
-const results = await client.recommend({
-  query: "somewhere to celebrate a birthday this weekend",
-  location: { city: "New York" },
-  user_context: {
-    preferences_text:
-      "Six friends. Two are vegan, one uses a wheelchair so step-free " +
-      "access is required. They want to sit together and talk.",
-    profile: { party: "friends", budget: "$$$" },
-  },
+const answer = await client.ask({
+  message:
+    "Six friends want somewhere to celebrate a birthday this weekend. Two " +
+    "are vegan, one uses a wheelchair so step-free access is required. They " +
+    "want to sit together and talk, not stand in a crowd. Under $60 a head.",
+  place: "Lower East Side",
+  effort: "high",
 });
+
+console.log(answer.understood);            // show this first
+for (const row of answer.results) {        // in this order
+  console.log(row.title, "—", row.reason); // the sentence is already written
+}
 ```
+
+Put everything you know in `message`, including what no search could express
+— a wheelchair, an allergy, a dislike. Those are read and reasoned about, and
+they are the most useful thing you can send.
 
 ## Four things that trip people up
 
@@ -200,7 +211,7 @@ https://rtdb.syncso.com/partner/mcp
 }
 ```
 
-It exposes two tools — `search_experiences` and `get_details` — using the
+It exposes two tools — `find_things_to_do` and `get_details` — using the
 same key, limits and billing as the REST API above, and sends the agent
 workflow below as `instructions` on connect.
 

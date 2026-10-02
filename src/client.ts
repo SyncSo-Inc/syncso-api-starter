@@ -70,28 +70,40 @@ export class SyncSoClient {
   }
 
   /**
-   * Personalized search. Pass what you know about the person in
-   * `user_context`; each result comes back with a `match.reason`.
+   * Ask what someone should do, in the words they would use.
    *
-   * Slower and dearer than search (16-33s and 13-20 credits for 20 results,
-   * against under 2s and 1), so it earns its keep only when you actually
-   * know something about the person. Priced on the reasoning it does rather
-   * than the row count, and it binds at the 20-credit cap on a full page.
+   * Everything on in that window and area is read against the request --
+   * a thousand rows and more -- and comes back ranked, each result with a
+   * sentence saying why it is there. Send the whole request as one
+   * `message`: who they are with, the occasion, the budget, what they want
+   * to avoid, anything they cannot do. Do not split it into several calls,
+   * and do not re-rank what comes back -- the order IS the reading.
+   *
+   * Slower and dearer than search (about 13s and 6-9 credits at the default
+   * effort, against under 2s and 1), so it earns its keep when you have
+   * something to say about the person. `effort` buys planning and the
+   * quality of the sentences; see the manual's section 7.4.
    */
-  recommend(body: SearchRequest & IntelligenceExtras): Promise<SearchResponse> {
-    return this.post("/local-intelligence", { ...body, stream: false });
+  ask(body: AskRequest): Promise<AskResponse> {
+    return this.post("/local-intelligence", body);
   }
 
   private async post<T>(path: string, body: unknown): Promise<T> {
     // Images unless the caller said otherwise. Most surfaces showing an event
-    // want a picture, and a row's images only come back if the request asked
-    // for them — a default of none makes the catalogue look emptier than it is.
-    const withMedia = {
-      media: { images_per_result: 3 },
-      ...(body as Record<string, unknown>),
-    };
+    // want a picture, and a search row's images only come back if the request
+    // asked for them — a default of none makes the catalogue look emptier
+    // than it is.
+    //
+    // NOT on /local-intelligence: that endpoint has no `media` field and
+    // rejects what it does not know, so sending this default would 422 every
+    // call. Its results carry `image` and `images` without being asked.
+    const withMedia =
+      path === "/local-intelligence"
+        ? (body as Record<string, unknown>)
+        : { media: { images_per_result: 3 }, ...(body as Record<string, unknown>) };
 
-    // Local Intelligence can take 30s; a shorter timeout is self-inflicted failure.
+    // Local Intelligence takes about 13s and can run longer; a shorter
+    // timeout is self-inflicted failure.
     const response = await fetch(`${BASE}${path}`, {
       method: "POST",
       headers: {
@@ -221,30 +233,112 @@ export interface FeaturedRequest {
   media?: MediaOptions;
 }
 
-export interface IntelligenceExtras {
-  /** Adds a 2-3 sentence `summary` of the recommendations. */
-  include_summary?: boolean;
-  /** Omit entirely for an unpersonalized AI ranking. */
-  user_context?: {
-    /** The richer this is, the better the ranking. Up to 2000 chars. */
-    preferences_text?: string;
-    interests?: string[];
-    avoid?: string[];
-    profile?: {
-      party?: "solo" | "couple" | "friends" | "family" | "team";
-      budget?: "$" | "$$" | "$$$" | "$$$$";
-      age_range?: string;
-      home_area?: string;
-    };
-  };
-  intelligence?: {
-    /**
-     * false uses your query verbatim for retrieval — several times faster and
-     * cheaper. Results are still ranked and explained either way; the switch
-     * only changes how candidates are found.
-     */
-    intent?: boolean;
-  };
+export interface AskRequest {
+  /**
+   * What they want, as a person would say it. A sentence or two, not
+   * keywords. Leave nothing out for being unsearchable: a wheelchair, an
+   * allergy, a dislike, "my parents are in their seventies and can't be on
+   * their feet long" are read and reasoned about, and they are the most
+   * useful thing you can send. Time and place can be said here too.
+   */
+  message: string;
+  /**
+   * A neighbourhood, borough, landmark, street address or transit line,
+   * when you want to be certain of it rather than leave it to the
+   * sentence. Beats any place named in `message`.
+   */
+  place?: string;
+  /** Their position, when you have it. Beats `place`. */
+  lat?: number;
+  lng?: number;
+  /** How far they will go. Default 3 miles from a point, 5 from an area. */
+  radius_mi?: number;
+  /**
+   * Windows you have already resolved, New York local wall-clock
+   * (`YYYY-MM-DDTHH:MM`). Beats any time in `message`.
+   *
+   * A LIST because a calendar is a list: two windows with a gap between
+   * them do not search the gap. Give `end` only when there is a real
+   * deadline -- an absent `end` means the rest of that day, not the year.
+   */
+  when?: Array<{ start: string; end?: string }>;
+  /**
+   * What is true of this person across visits. It reorders the answer; it
+   * never narrows what is searched.
+   */
+  context?: { interests?: string[]; preferences?: Array<Record<string, unknown>> };
+  /**
+   * How hard to think about the request. `medium` is the default and is
+   * right almost always; `high` for a request carrying real constraints to
+   * reason about; `low` for a bare "what's on tonight".
+   */
+  effort?: "high" | "medium" | "low";
+  /**
+   * How many results to return (1-400, default 50). A sentence is written
+   * for every one and the price follows that, so ask for what you will
+   * actually show.
+   */
+  limit?: number;
+  /** The previous answer's `next_cursor`, everything else unchanged. */
+  cursor?: string;
+}
+
+/** One ranked result, with the sentence already written for this request. */
+export interface AskResult {
+  id: string;
+  title: string;
+  /** 0-1, how well this answers the request. */
+  score: number;
+  /**
+   * One sentence, addressed to the end user, built only from facts in the
+   * result itself. Safe to display verbatim. `null` when none could be
+   * written in time: show the result without it rather than hiding it.
+   */
+  reason: string | null;
+  /** The same fit in short phrases, for a card that shows tags. */
+  reasons?: string[];
+  start?: string | null;
+  end?: string | null;
+  /** True for a run already open -- say "on now, through ..." not a time. */
+  ongoing?: boolean;
+  venue?: string | null;
+  neighborhood?: string | null;
+  distance_mi?: number | null;
+  price_min?: number | null;
+  price_max?: number | null;
+  is_free?: boolean | null;
+  link?: string | null;
+  summary?: string | null;
+  image?: string | null;
+  images?: string[];
+  category?: string | null;
+  experience_type?: string | null;
+}
+
+export interface AskResponse {
+  /**
+   * The opening line: how much was read and what the request was taken to
+   * mean. Show it first -- it is the reader's one chance to correct you.
+   */
+  understood: string | null;
+  /** Rows in the window and area before ranking; the figure `understood` quotes. */
+  total_in_range: number;
+  /** Ranked. Show them in this order. */
+  results: AskResult[];
+  /** What the time and place words resolved to. */
+  window: Record<string, unknown>;
+  place: Record<string, unknown>;
+  /** Each inference the request left open, in one sentence. Show them. */
+  assumptions: string[];
+  /** True when the circle searched is empty but the catalogue is not. */
+  out_of_area?: boolean;
+  /** True when nothing in range actually fits; say so rather than implying a match. */
+  thin_answer?: boolean;
+  /** Results folded away as the same suggestion as one that is here. */
+  folded?: Array<Record<string, string>>;
+  next_cursor?: string | null;
+  meta?: { credits_charged?: number; effort?: string; results?: number };
+  request_id?: string;
 }
 
 /** Wall-clock time at the venue, plus the zone to read it in. */
