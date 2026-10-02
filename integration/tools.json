@@ -1,137 +1,80 @@
 [
   {
     "type": "function",
-    "name": "search_experiences",
-    "description": "Search experiences happening in New York — events, shows, classes, tours, markets — and the places they happen in. 2-4 seconds; 1 credit per 20 results, up to 60 per search. One search per direction (per interest, time slot or kind of place), several in parallel; pick `limit` per direction. Left to defaults: 10 results per type, both experiences and venues, every upcoming date, whole city, no filters.\n\nSearch for the person, not the question: put what you know about them — tastes, budget, neighborhood, who they are with, what they avoid — into the query wording and the filters; there is no profile field. Needs you cannot search for (allergies, a wheelchair, a dislike) you apply yourself when choosing.\n\nThen choose two to four results per search for this user and say why; do not relay the rows. Times shown are New York local — never convert them, and never say whether tickets are available.",
+    "name": "find_things_to_do",
+    "description": "THE TOOL TO REACH FOR whenever someone asks what to do, where to go, what is on, or wants an evening planned.\n\nSend what they said, in their words, plus whatever you know about them that bears on it. One call. We read everything on in that window and that area — a thousand rows and more — and return the ones that fit, in order, each with a sentence saying why it is there.\n\nDO NOT split the request into searches, and do not re-rank or filter what comes back. The ordering is the answer: it was made by reading every candidate against this person's actual request, which is work no selection from a results list can redo. Show them in the order given.\n\nMeasured 2026-09-29: three query directions over the same slice recovered 70% of what reading all of it returned, and everything they missed was the local life — a Go night at a cafe, a running club, an origami meetup, a free park tour. What they recovered instead included a flu clinic and two online seminary courses.\n\nNew York only for now.\n\n15-25 seconds. Priced per call on the work it did — see `effort`.",
     "parameters": {
       "type": "object",
       "properties": {
-        "query": {
+        "request": {
           "type": "string",
-          "maxLength": 1000,
-          "description": "One direction, as a short phrase describing what the user wants rather than repeating their sentence: 'live jazz', 'rooftop cocktails', 'kid-friendly science museum', 'lively group dinner'. Fold what you know about the user into the wording ('intimate', 'quiet', 'family-friendly', 'cheap'). Put the time in time_windows and the place in location, not here."
+          "minLength": 1,
+          "maxLength": 2000,
+          "description": "What they want, as a person would say it — their own words, plus what you know that bears on the evening: who they are with, the occasion, the budget, what they want to avoid, anything they cannot do.\n\nA sentence or two, not keywords. \"Something for a first date tonight in the East Village, quiet enough to talk, under $150 for two\" is the shape — the constraints are read, not matched as text. Leave nothing out for being unsearchable: a wheelchair, an allergy, a dislike all belong here, because here they are understood rather than pattern-matched.\n\nTime and place can be said here too, in words — \"tonight\", \"this weekend\", \"near Columbia\" — and are resolved against the real clock and map. Use the structured fields instead only when you already hold the exact values."
         },
-        "location": {
+        "place": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "A neighbourhood, borough or landmark, when you want to be certain of it rather than leave it to the sentence. Beats any place named in `request`."
+        },
+        "lat": {
+          "type": "number",
+          "description": "Their position, if you have it. Beats `place`."
+        },
+        "lng": {
+          "type": "number"
+        },
+        "radius_mi": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 50,
+          "description": "How far they will go. Default 3 miles from a point, 5 from a named area."
+        },
+        "when": {
           "type": "object",
-          "description": "{\"city\": \"New York\"} for the whole city. Add \"area_text\" to narrow to a neighborhood or borough the user named: {\"city\": \"New York\", \"area_text\": \"Williamsburg\"}. If you have coordinates (the user's position, a hotel) use a circle instead: {\"point\": {\"lat\": 40.73, \"lng\": -73.99, \"radius_km\": 2}}; results then carry a distance. Never send both city and point.",
+          "description": "A window you have already resolved, New York local time. Beats any time in `request`. Give `end` only when there is a real deadline: an absent `end` means the rest of that day, not the coming year.",
           "properties": {
-            "city": {
+            "start": {
               "type": "string",
-              "description": "\"New York\". NYC, Manhattan, Brooklyn and the other boroughs are accepted too. No other city is covered yet."
+              "description": "e.g. 2026-10-02T18:00"
             },
-            "area_text": {
-              "type": "string",
-              "description": "A neighborhood or borough, e.g. 'Williamsburg', 'Lower East Side', 'Queens'. Only with city. If it matches nothing the search widens to the whole city and the result says so."
-            },
-            "point": {
-              "type": "object",
-              "description": "Circle search around a coordinate; radius_km 0.1-50. Results carry distance_km.",
-              "properties": {
-                "lat": {
-                  "type": "number"
-                },
-                "lng": {
-                  "type": "number"
-                },
-                "radius_km": {
-                  "type": "number",
-                  "minimum": 0.1,
-                  "maximum": 50
-                }
-              },
-              "required": [
-                "lat",
-                "lng",
-                "radius_km"
-              ]
+            "end": {
+              "type": "string"
             }
-          }
-        },
-        "time_windows": {
-          "type": "array",
-          "maxItems": 50,
-          "description": "When the user could go: a list of {start, end} in New York local time, written like '2026-09-20T19:00', with no timezone and no 'Z'. One window per stretch of time. Tonight: one window 18:00-23:59 today. This weekend: two windows, Saturday and Sunday, each 00:00-23:59. Saturday evening: one window 17:00-23:59. Next week: one window from Monday 00:00 to Sunday 23:59. Friday evening or Sunday afternoon: two windows, 18:00-23:59 Friday and 12:00-18:00 Sunday; each result then says which window it falls in. A window must end in the future. Omit only when the user has no time in mind; the search then covers every upcoming date. Today's date in New York is given to you on connect and repeated on every result.",
-          "items": {
-            "type": "object",
-            "properties": {
-              "start": {
-                "type": "string",
-                "description": "e.g. 2026-09-20T19:00"
-              },
-              "end": {
-                "type": "string",
-                "description": "e.g. 2026-09-20T23:59"
-              }
-            },
-            "required": [
-              "start",
-              "end"
-            ]
-          }
-        },
-        "result_types": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "experiences",
-              "venues"
-            ]
           },
-          "description": "[\"experiences\"] for things that happen at a time (a show, a class, a market, a tour) — the usual choice. [\"venues\"] for standing places with no event attached (a bar, a restaurant, a museum, a park), when the user wants somewhere to go rather than something to attend. Pick one per direction. Omitted, both come back."
+          "required": [
+            "start"
+          ]
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "description": "How hard to think about the request. `high` is the default: it plans with the strongest model and writes the fullest reasons, and it is also the fastest whole answer, so lower it to spend fewer credits, never to go quicker. `medium` for a request you have measured and want cheaper; `low` for a bare \"what's on tonight\". Retrieval is identical at all three; this buys planning and the quality of the sentences."
         },
         "limit": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 60,
-          "description": "Results for this search, per result type. Default 10. About 10 for a side interest, up to 20 for the direction the user cares most about; up to 20 still costs 1 credit."
-        },
-        "is_free": {
-          "type": "boolean",
-          "description": "true keeps only free experiences, false only paid ones. Rows with unknown price are left out either way. Use for a tight budget."
-        },
-        "environment_types": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "indoor",
-              "outdoor",
-              "mixed"
-            ]
-          },
-          "description": "Keep only experiences in these settings: indoor, outdoor, mixed. Use for weather."
-        },
-        "ranking": {
-          "type": "object",
-          "description": "Optional nudges, not sorts: prefer_popularity moves well-known things earlier, prefer_uniqueness unusual ones, prefer_credibility established ones. Leave out unless the user's taste points that way.",
-          "properties": {
-            "prefer_popularity": {
-              "type": "boolean"
-            },
-            "prefer_credibility": {
-              "type": "boolean"
-            },
-            "prefer_uniqueness": {
-              "type": "boolean"
-            }
-          }
+          "maximum": 400,
+          "description": "How many to return. Defaults to a screenful. Ask for what you will actually show — a sentence is written for every row returned, and the price follows that."
         },
         "cursor": {
           "type": "string",
-          "description": "For 'more like these' only: the cursor from a previous result, for the next page of the SAME search with every other argument unchanged. Nothing repeats and the order does not shift. Expires after 15 minutes; if expired, run the original search again without it. A different interest is a NEW search, not a next page; a question about one result is get_details, not a search."
+          "description": "Next page of the same answer."
         }
       },
       "required": [
-        "query",
-        "location"
+        "request"
       ]
     }
   },
   {
     "type": "function",
     "name": "get_details",
-    "description": "Everything about the results the user asked about, by the ids from a search: full schedule, host, venue hours, amenities and phone, all images and every source link.\n\nAsk for every one you need in a SINGLE call — the whole call costs 1 credit however many ids it carries, and they are fetched together. Calling it once per id costs a credit each. For the results the user is choosing between, not for every row you got.\n\nPictures come back inline and are shown to the user. One id alone returns up to three of its pictures; several ids share the space and get one each. So: while the user is still choosing, batch; once they have settled on one and want to see it, ask for that id by itself.",
+    "description": "The full record behind a search result, by its id. A search row is a summary; this is everything we hold about that one thing — its whole schedule rather than the next dates, the venue as a place rather than an address, and where else it is listed.\n\nCall it when the row in front of you does not answer what you are about to say. 1 credit per call, and several ids in one call cost the same as one. Not for pictures — the search row already carries the image URL, and this returns none.",
     "parameters": {
       "type": "object",
       "properties": {
