@@ -2,7 +2,7 @@
   {
     "type": "function",
     "name": "find_things_to_do",
-    "description": "THE TOOL TO REACH FOR whenever someone asks what to do, where to go, what is on, or wants an evening planned.\n\nSend what they said, in their words, plus whatever you know about them that bears on it. One call. We read everything on in that window and that area — a thousand rows and more — and return the ones that fit, in order, each with a sentence saying why it is there.\n\nDO NOT split the request into searches, and do not re-rank or filter what comes back. The ordering is the answer: it was made by reading every candidate against this person's actual request, which is work no selection from a results list can redo. Show them in the order given.\n\nMeasured 2026-09-29: three query directions over the same slice recovered 70% of what reading all of it returned, and everything they missed was the local life — a Go night at a cafe, a running club, an origami meetup, a free park tour. What they recovered instead included a flu clinic and two online seminary courses.\n\nNew York only for now.\n\n15-25 seconds. Priced per call on the work it did — see `effort`.",
+    "description": "The tool to reach for whenever someone asks what to do, where to go, what is on, or wants a day or an evening planned.\n\nSend what they said, in their words, plus whatever you know about them that bears on it. One call. We read everything on in that window and that area — a thousand rows and more — and return the ones that fit, in order, each with a sentence saying why it is there.\n\nDO NOT split the request into searches, and do not re-rank or filter what comes back. The ordering is the answer: it was made by reading every candidate against this person's actual request, which is work no selection from a results list can redo. Show them in the order given.\n\nKeyword searches miss the local life — a Go night at a cafe, a running club, an origami meetup, a free park tour — because\nnone of it describes itself in the words anyone would search for. Reading every row is how those are found.\n\nNew York only for now.\n\n15-25 seconds. Priced per call on the work it did; `effort` and `limit` are what move it.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -10,7 +10,7 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 2000,
-          "description": "What they want, as a person would say it — their own words, plus what you know that bears on the evening: who they are with, the occasion, the budget, what they want to avoid, anything they cannot do.\n\nA sentence or two, not keywords. \"Something for a first date tonight in the East Village, quiet enough to talk, under $150 for two\" is the shape — the constraints are read, not matched as text. Leave nothing out for being unsearchable: a wheelchair, an allergy, a dislike all belong here, because here they are understood rather than pattern-matched.\n\nTime and place can be said here too, in words — \"tonight\", \"this weekend\", \"near Columbia\" — and are resolved against the real clock and map. Use the structured fields instead only when you already hold the exact values."
+          "description": "What they want, as a person would say it — their own words, plus what you know that bears on it: who they are with, the occasion, the budget, what they want to avoid, anything they cannot do.\n\nA sentence or two, not keywords. \"Something for a first date tonight in the East Village, quiet enough to talk, under $150 for two\" is the shape — the constraints are read, not matched as text. Leave nothing out for being unsearchable: a wheelchair, an allergy, a dislike all belong here, because here they are understood rather than pattern-matched.\n\nTime and place can be said here too, in words — \"tonight\", \"this weekend\", \"near Columbia\" — and are resolved against the real clock and map. Use the structured fields instead only when you already hold the exact values."
         },
         "place": {
           "type": "string",
@@ -19,10 +19,11 @@
         },
         "lat": {
           "type": "number",
-          "description": "Their position, if you have it. Beats `place`."
+          "description": "Their position, if you have it. Send both `lat` and `lng`; either alone is ignored. Beats `place`."
         },
         "lng": {
-          "type": "number"
+          "type": "number",
+          "description": "The other half of `lat`. Negative in New York."
         },
         "radius_mi": {
           "type": "number",
@@ -39,7 +40,8 @@
               "description": "e.g. 2026-10-02T18:00"
             },
             "end": {
-              "type": "string"
+              "type": "string",
+              "description": "Same shape as `start`, e.g. 2026-10-02T23:00. A deadline, not a day: leave it out and the window runs to the end of `start`'s day."
             }
           },
           "required": [
@@ -53,7 +55,7 @@
             "medium",
             "low"
           ],
-          "description": "How hard to think about the request. `high` is the default: it plans with the strongest model and writes the fullest reasons, and it is also the fastest whole answer, so lower it to spend fewer credits, never to go quicker. `medium` for a request you have measured and want cheaper; `low` for a bare \"what's on tonight\". Retrieval is identical at all three; this buys planning and the quality of the sentences."
+          "description": "How hard to think about the request. `high` is the default and the one to leave alone: it plans with the strongest model and writes the fullest reasons. Retrieval is identical at all three, so lowering it buys fewer credits rather than less waiting — and a weaker plan can cost more time by asking for the wrong thing first.\n\nA broad opening question is where the reasons earn their keep, so lower this for a request you have run before and want cheaper, not because the question sounded simple."
         },
         "limit": {
           "type": "integer",
