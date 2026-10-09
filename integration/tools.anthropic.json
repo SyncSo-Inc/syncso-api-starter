@@ -51,7 +51,7 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 400,
-          "description": "How many to return. Defaults to 20, in order; show them in that order. Ask for what you will actually show — a sentence is written for every row returned, and the price follows that."
+          "description": "How many to return. Defaults to 20, in order; show them in that order, and leave this field out — the default is almost always the one to send.\n\nA smaller number does not come back sooner. The sentences are written in parallel and released in rank order, so the first card arrives at the same moment whether you asked for 12 or 50. Asking for fewer buys fewer credits and a shorter answer, never less waiting.\n\nSo send a number only when the person wants a short list, or when you are spending their credits carefully: a sentence is written for every row returned, and the price follows that. Ask for what you will actually show — but never to go faster, because there is no faster here."
         },
         "cursor": {
           "type": "string",

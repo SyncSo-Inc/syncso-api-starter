@@ -53,9 +53,13 @@ their feet long" — these are read and reasoned about, not matched as text,
 and they are where the best answers come from.
 
 An answer costs 5-10 credits for the first 50 results and 3 for each
-further 50, on the work it actually did. `limit` is the lever: a sentence
-is written for every row returned, so ask for what you will show. Left
-out, it is 20.
+further 50, on the work it actually did.
+
+Leave `limit` out: it is 20, and that is almost always the right ask. A
+smaller number does not come back sooner — the sentences are written in
+parallel and released in rank order, so the first card arrives at the same
+moment either way. Asking for fewer buys fewer credits, never less
+waiting.
 
 ## Showing the answer
 
@@ -68,6 +72,8 @@ Each row arrives finished, laid out as the card to show:
     [Book](the booking link)
 
 Pass them on in that shape and that order, all of them, top to bottom.
+Please don't reorder everything, and please don't investigate everything,
+because the user needs the results fast.
 
 The sentence is already written for this request — use it, as it is
 written. Rewriting it costs the reader the reasoning and gains nothing, and
