@@ -2,7 +2,7 @@
   {
     "type": "function",
     "name": "find_things_to_do",
-    "description": "The tool to reach for whenever someone asks what to do, where to go, what is on, or wants a day or an evening planned.\n\nSend what they said, in their words, plus whatever you know about them that bears on it. One call. We read everything on in that window and that area — a thousand rows and more — and return the ones that fit, in order, each with a sentence saying why it is there.\n\nDO NOT split the request into searches, and do not re-rank or filter what comes back. The ordering is the answer: it was made by reading every candidate against this person's actual request, which is work no selection from a results list can redo. Show them in the order given.\n\nKeyword searches miss the local life — a Go night at a cafe, a running club, an origami meetup, a free park tour — because\nnone of it describes itself in the words anyone would search for. Reading every row is how those are found.\n\nNew York only for now.\n\n15-25 seconds. Priced per call on the work it did; `effort` and `limit` are what move it.",
+    "description": "The tool to reach for whenever someone asks what to do, where to go, what is on, or wants a day or an evening planned.\n\nSend what they said, in their words, and with it whatever you know about this person — who they are, and their preferences: what they have liked, disliked or already done. Not only tonight's constraints. One call. We read everything on in that window and that area — a thousand rows and more — and return the ones that fit, in order, each with a sentence saying why it is there.\n\nDO NOT split the request into searches, and do not re-rank or filter what comes back. The ordering is the answer: it was made by reading every candidate against this person's actual request, which is work no selection from a results list can redo. Show them in the order given.\n\nKeyword searches miss the local life — a Go night at a cafe, a running club, an origami meetup, a free park tour — because\nnone of it describes itself in the words anyone would search for. Reading every row is how those are found.\n\nNew York only for now.\n\n15-25 seconds. Priced per call on the work it did: 5-10 credits for the first 50 results and 3 for each further 50, so `limit` is what moves it.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -10,7 +10,7 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 2000,
-          "description": "What they want, as a person would say it — their own words, plus what you know that bears on it: who they are with, the occasion, the budget, what they want to avoid, anything they cannot do.\n\nA sentence or two, not keywords. \"Something for a first date tonight in the East Village, quiet enough to talk, under $150 for two\" is the shape — the constraints are read, not matched as text. Leave nothing out for being unsearchable: a wheelchair, an allergy, a dislike all belong here, because here they are understood rather than pattern-matched.\n\nTime and place can be said here too, in words — \"tonight\", \"this weekend\", \"near Columbia\" — and are resolved against the real clock and map. Use the structured fields instead only when you already hold the exact values."
+          "description": "What they want, in their own words, and with it whatever you know about this person that bears on it:\n\nWHO THEY ARE — where they live, how old, what they do, how long they have been in the city.\n\nTHEIR PREFERENCES — what they like and dislike, what they have already done, what they loved, what they turned down. In this conversation or an earlier one. This is the most useful thing you can send and the easiest to leave behind, because it is not in the question they just asked.\n\nTHIS OUTING — who they are with, the occasion, the budget, what they want to avoid, anything they cannot do.\n\nProse, not keywords. Send what you have, as much as you have: there is room for a paragraph if you know a paragraph's worth, and nothing to invent if you do not. All of it is read and reasoned about, never matched as text. Leave nothing out for being unsearchable: a wheelchair, an allergy, a dislike, \"her parents are in their seventies and can't be on their feet long\" all belong here, and are where the best answers come from.\n\nTime and place can be said here too, in words — \"tonight\", \"this weekend\", \"near Columbia\" — and are resolved against the real clock and map. Use the structured fields instead only when you already hold the exact values."
         },
         "place": {
           "type": "string",
@@ -47,15 +47,6 @@
           "required": [
             "start"
           ]
-        },
-        "effort": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
-          ],
-          "description": "How hard to think about the request. `high` is the default and the one to leave alone: it plans with the strongest model and writes the fullest reasons. Retrieval is identical at all three, so lowering it buys fewer credits rather than less waiting — and a weaker plan can cost more time by asking for the wrong thing first.\n\nA broad opening question is where the reasons earn their keep, so lower this for a request you have run before and want cheaper, not because the question sounded simple."
         },
         "limit": {
           "type": "integer",
