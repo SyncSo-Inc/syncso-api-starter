@@ -54,7 +54,8 @@ and they are where the best answers come from.
 
 An answer costs 5-10 credits for the first 50 results and 3 for each
 further 50, on the work it actually did. `limit` is the lever: a sentence
-is written for every row returned, so ask for what you will show.
+is written for every row returned, so ask for what you will show. Left
+out, it is 20.
 
 ## Showing the answer
 
@@ -66,7 +67,7 @@ Each row arrives finished, laid out as the card to show:
     time · venue · price
     [Book](the booking link)
 
-Pass them on in that shape and that order, ten or more of them.
+Pass them on in that shape and that order, all of them, top to bottom.
 
 The sentence is already written for this request — use it, as it is
 written. Rewriting it costs the reader the reasoning and gains nothing, and
