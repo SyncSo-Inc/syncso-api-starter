@@ -68,7 +68,7 @@ Each row arrives finished, laid out as the card to show:
     ![name](the picture)
 
     **name** — why it suits this person
-    time · venue · price
+    time · location · price
     [Book](the booking link)
 
 Pass them on in that shape and that order, all of them, top to bottom.
