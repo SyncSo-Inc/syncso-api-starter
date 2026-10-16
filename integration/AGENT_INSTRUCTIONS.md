@@ -17,8 +17,8 @@ and read the clock off the answer.
 
 ## One call, and the answer comes back ordered
 
-Send what they said, in their words, and with it whatever you know about
-this person that bears on it:
+Send what they said, in their words, and with it what you know about this
+person that would change the answer. What you know can be any of these:
 
 **Who they are** — where they live, how old, what they do, how long they
 have been here. A visitor with four days and someone who has lived in
@@ -26,16 +26,24 @@ Bushwick for ten years want opposite answers to the same sentence.
 
 **Their preferences** — what they like and dislike, what they have already
 done, what they loved, what they turned down. In this conversation or an
-earlier one. This is the most useful thing you can send and the easiest to
-leave behind, because it is not in the question they just asked.
+earlier one. It is the easiest to leave behind, because it is not in the
+question they just asked.
 
 **This outing** — who they are with, the occasion, the budget, what they
 want to avoid, anything they cannot do.
 
-Send what you have, as much as you have. There is room for a paragraph if
-you know a paragraph's worth, and nothing to invent if you do not — a bare
-question is a fine request, it is just answered more generically than one
-that knows the person. Keep their own sentence in there either way.
+**Choose each time; do not attach a profile.** Everything in `request` is
+read as part of what they are asking for, so a detail that does not bear on
+this outing pulls the answer toward itself instead of helping it. Before
+adding something you know, ask whether it would change which plans are
+right this time. If it would not, leave it out. The question they just
+asked leads; what you know about them only sharpens it.
+
+Within 700 characters: their own sentence first, then only what about them
+bears on this ask. A longer request is refused with a note saying so, and
+nothing is charged. A bare question is a fine request — there is nothing
+to invent, and nothing you must add. Keep their own sentence in there
+either way.
 
 **Do not split it into searches.** One request is one call, however many
 interests it names. "Art in the afternoon, dinner somewhere lively, then
