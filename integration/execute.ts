@@ -11,7 +11,7 @@
 const MCP_URL = process.env.SYNCSO_MCP_URL ?? "https://rtdb.syncso.com/partner/mcp";
 
 export async function executeSyncSoTool(
-  name: "search_experiences" | "get_details",
+  name: "find_things_to_do" | "get_details",
   args: Record<string, unknown>,
   apiKey = process.env.SYNCSO_API_KEY,
 ): Promise<{ text: string; isError: boolean }> {
@@ -29,7 +29,9 @@ export async function executeSyncSoTool(
       method: "tools/call",
       params: { name, arguments: args },
     }),
-    signal: AbortSignal.timeout(30_000),
+    // find_things_to_do reads every candidate before it answers: 11-16s is
+    // typical, so leave room for the slow tail.
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!response.ok) {
@@ -44,18 +46,14 @@ export async function executeSyncSoTool(
   return { text, isError: Boolean(body.result?.isError) };
 }
 
-// Example: several directions at once, the way AGENT_INSTRUCTIONS.md asks for.
+// Example: the whole ask as one call, the way AGENT_INSTRUCTIONS.md asks for.
+// Do not split it into several searches; the order that comes back is the answer.
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const directions = ["live jazz", "rooftop cocktails", "comedy show"];
-  const results = await Promise.all(
-    directions.map((query) =>
-      executeSyncSoTool("search_experiences", {
-        query,
-        location: { city: "New York" },
-        result_types: ["experiences"],
-        limit: 5,
-      }),
-    ),
-  );
-  results.forEach((r, i) => console.log(`\n### ${directions[i]}\n${r.text}`));
+  const { text, isError } = await executeSyncSoTool("find_things_to_do", {
+    request:
+      "Live jazz or a comedy show tonight, then somewhere for a cocktail " +
+      "nearby. Two of us, mid-30s, would rather sit than stand.",
+    limit: 5,
+  });
+  console.log(isError ? `Error: ${text}` : text);
 }

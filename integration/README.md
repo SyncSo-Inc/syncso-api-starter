@@ -46,8 +46,8 @@ const { text, isError } = await executeSyncSoTool(call.name, call.arguments);
 
 It posts to the MCP endpoint over plain HTTP and returns compact text,
 about 120 tokens per result, so a page of 20 costs your model ~2,500 tokens
-rather than the ~18,000 raw JSON would. Run it directly to watch three
-searches go out in parallel:
+rather than the ~18,000 raw JSON would. Run it directly to watch one
+request come back ranked:
 
 ```bash
 node --env-file=.env integration/execute.ts
@@ -57,8 +57,8 @@ node --env-file=.env integration/execute.ts
 
 | Tool | What | Cost |
 |---|---|---|
-| `search_experiences` | Events, shows, classes, restaurants, bars, museums | 1 credit per 20 results |
-| `get_details` | Everything about results the user picked, up to 20 ids in one call | 1 credit |
+| `find_things_to_do` | The whole ask in one call — events, shows, classes, restaurants, bars, museums — ranked, each with a reason | 5-10 credits for the first 50 results |
+| `get_details` | Everything about results the user picked, several ids in one call | 1 credit per call |
 
 Two, deliberately. Every tool definition is re-sent on every model request
 for the life of your integration, alongside whatever else you have mounted,
@@ -66,8 +66,9 @@ so a tool has to earn that standing cost. The New York clock arrives with
 the connection and on every result rather than as a tool; the city list is
 one city.
 
-A search takes 2–4 seconds. A plan built from five directions is 5 credits
-and about five seconds, because the searches run together.
+An answer takes 11-16 seconds for a screenful. Send the whole request as
+one call — do not split it into several searches, and do not re-rank what
+comes back.
 
 ## What you must supply
 

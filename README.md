@@ -232,8 +232,8 @@ use the SyncSo tools to search real events and places.
 
 Everything else — how to phrase a search, build a time window, handle a
 follow-up, what never to tell the user — is in the tool descriptions, which
-the model reads anyway. [`integration/`](integration/) holds the four tool
-definitions in OpenAI and Anthropic shapes and a 40-line executor for
+the model reads anyway. [`integration/`](integration/) holds the two tool
+definitions in OpenAI and Anthropic shapes and a short executor for
 frameworks that do not speak MCP. See
 [`integration/README.md`](integration/README.md).
 
