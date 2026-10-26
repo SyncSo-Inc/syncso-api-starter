@@ -79,10 +79,10 @@ export class SyncSoClient {
    * to avoid, anything they cannot do. Do not split it into several calls,
    * and do not re-rank what comes back -- the order IS the reading.
    *
-   * Slower and dearer than search (about 13s and 6-9 credits at the default
-   * effort, against under 2s and 1), so it earns its keep when you have
-   * something to say about the person. `effort` buys planning and the
-   * quality of the sentences; see the manual's section 7.4.
+   * Slower and dearer than search (about 13s and 5-10 credits for the first
+   * 50 results, +3 per further 50, against under 2s and 1), so it earns its
+   * keep when you have something to say about the person. See the manual's
+   * section 7.4 for the price.
    */
   ask(body: AskRequest): Promise<AskResponse> {
     return this.post("/local-intelligence", body);
@@ -268,9 +268,9 @@ export interface AskRequest {
    */
   context?: { interests?: string[]; preferences?: Array<Record<string, unknown>> };
   /**
-   * How hard to think about the request. `medium` is the default and is
-   * right almost always; `high` for a request carrying real constraints to
-   * reason about; `low` for a bare "what's on tonight".
+   * One setting today, `high`, which is the default: leave it out.
+   * `medium` and `low` are still accepted so older code keeps working, and
+   * are answered and priced at `high`; `meta.effort_folded` then says so.
    */
   effort?: "high" | "medium" | "low";
   /**
@@ -337,7 +337,12 @@ export interface AskResponse {
   /** Results folded away as the same suggestion as one that is here. */
   folded?: Array<Record<string, string>>;
   next_cursor?: string | null;
-  meta?: { credits_charged?: number; effort?: string; results?: number };
+  meta?: {
+    credits_charged?: number;
+    effort?: string;
+    results?: number;
+    effort_folded?: { asked: string; served: string; note: string };
+  };
   request_id?: string;
 }
 

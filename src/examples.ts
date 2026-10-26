@@ -381,7 +381,7 @@ async function featuredPaged(): Promise<void> {
 // Ask what someone should do, in the words they would use. Everything on in
 // that window and area is read against the request -- a thousand rows and
 // more -- and comes back ranked, each result carrying a sentence you can
-// show verbatim. About 13s and 6-9 credits at the default effort, against
+// show verbatim. About 13s and 5-10 credits for the first 50 results, against
 // under 2s and 1 for search, so it earns its keep when you have something to
 // say about the person.
 //
@@ -447,11 +447,9 @@ async function liConstraints(): Promise<void> {
       + "access is required. They want to sit together and talk, not stand in "
       + "a crowd. Under $60 a head.",
     place: "Lower East Side",
-    effort: "high" as const,
     limit: 10,
   };
   head(12, "Local Intelligence — hard constraints, read not matched", "/local-intelligence", body);
-  console.log("(`effort: high` -- a request with real constraints to reason about)\n");
   const started = Date.now();
   const res = await client.ask(body);
   printAnswer(res);
@@ -494,11 +492,9 @@ async function liLandmark(): Promise<void> {
     message: "Somewhere quiet to read for an hour this afternoon.",
     place: "near the Guggenheim",
     radius_mi: 1,
-    effort: "low" as const,
     limit: 10,
   };
   head(14, "Local Intelligence — a landmark, not a neighbourhood", "/local-intelligence", body);
-  console.log("(`effort: low` -- a plain ask, nothing to reason about)\n");
   const started = Date.now();
   const res = await client.ask(body);
   printAnswer(res);
