@@ -51,7 +51,7 @@ plan and above.
 **`/local-intelligence`** — ask what someone should do, in the words they
 would use. Everything on in that window and area is read against the request
 and comes back ranked, each result carrying a sentence you can show verbatim.
-About 13s and 6-9 credits at the default effort.
+About 13s, and 5-10 credits for the first 50 results.
 
 One request is one call, however many interests it names, and the order it
 comes back in is the reading — do not split it, and do not re-rank it.
@@ -133,8 +133,8 @@ const results = await client.featured({
 ```
 
 `client.ask()` takes the request as a sentence and answers it ranked, each
-result carrying its own `reason`. Costs more than `search` (about 13s and 6–9
-credits at the default effort, against under 2s and 1), so it earns its keep
+result carrying its own `reason`. Costs more than `search` (about 13s and 5–10
+credits for the first 50 results, against under 2s and 1), so it earns its keep
 once you have something to say about the person:
 
 ```ts
@@ -144,7 +144,6 @@ const answer = await client.ask({
     "are vegan, one uses a wheelchair so step-free access is required. They " +
     "want to sit together and talk, not stand in a crowd. Under $60 a head.",
   place: "Lower East Side",
-  effort: "high",
 });
 
 console.log(answer.understood);            // show this first
