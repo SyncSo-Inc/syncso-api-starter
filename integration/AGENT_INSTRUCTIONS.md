@@ -60,7 +60,7 @@ allergy, a dislike, "my parents are in their seventies and can't be on
 their feet long" — these are read and reasoned about, not matched as text,
 and they are where the best answers come from.
 
-An answer costs 5-10 credits for the first 50 results and 3 for each
+An answer costs 6-11 credits for the first 50 results and 3 for each
 further 50, on the work it actually did.
 
 Leave `limit` out: it is 20, and that is almost always the right ask. A
