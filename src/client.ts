@@ -63,7 +63,7 @@ export class SyncSoClient {
   /**
    * A curated pool per city, no query required — for surfaces where nobody
    * has typed anything. Deliberately small: a city with three worth showing
-   * returns three, not a padded list. Growth plan and above.
+   * returns three, not a padded list. Pro plan and above.
    */
   featured(body: FeaturedRequest): Promise<SearchResponse> {
     return this.post("/featured", body);
@@ -79,7 +79,7 @@ export class SyncSoClient {
    * to avoid, anything they cannot do. Do not split it into several calls,
    * and do not re-rank what comes back -- the order IS the reading.
    *
-   * Slower and dearer than search (about 13s and 5-10 credits for the first
+   * Slower and dearer than search (about 13s and 6-11 credits for the first
    * 50 results, +3 per further 50, against under 2s and 1), so it earns its
    * keep when you have something to say about the person. See the manual's
    * section 7.4 for the price.

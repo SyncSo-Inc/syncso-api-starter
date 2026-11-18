@@ -27,7 +27,7 @@ npm run examples -- intelligence  # the five /local-intelligence examples
 npm run examples -- 12            # just number 12
 ```
 
-**`/search`** — experiences and venues. Usually under 2s, 1 credit per 20 results.
+**`/search`** — experiences and venues. Usually under 2s, 1 credit per 50 results.
 
 | | | |
 |---|---|---|
@@ -37,7 +37,7 @@ npm run examples -- 12            # just number 12
 | 4 | Cocktail bars in Williamsburg | venues, and the widened-area check |
 | 5 | Live music after 9pm | ranking preferences, both result types, and page 2 by cursor |
 
-**`/featured`** — a curated pool per city, no query. About 1s. Growth
+**`/featured`** — a curated pool per city, no query. About 1s. Pro
 plan and above.
 
 | | | |
@@ -51,7 +51,7 @@ plan and above.
 **`/local-intelligence`** — ask what someone should do, in the words they
 would use. Everything on in that window and area is read against the request
 and comes back ranked, each result carrying a sentence you can show verbatim.
-About 13s, and 5-10 credits for the first 50 results.
+About 13s, and 6-11 credits for the first 50 results.
 
 One request is one call, however many interests it names, and the order it
 comes back in is the reading — do not split it, and do not re-rank it.
@@ -65,7 +65,7 @@ comes back in is the reading — do not split it, and do not re-rank it.
 | 15 | What is on tonight, then page 2 | the same body plus the cursor |
 
 Each prints its request body, then the results, then latency and credits.
-Examples 6-10 need the Growth tier; 11-15 need the `intelligence` scope.
+Examples 6-10 need the Pro plan or above; 11-15 need the `intelligence` scope.
 
 ```
 3. Roy Hargrove Big Band Monthly Residency
@@ -133,7 +133,7 @@ const results = await client.featured({
 ```
 
 `client.ask()` takes the request as a sentence and answers it ranked, each
-result carrying its own `reason`. Costs more than `search` (about 13s and 5–10
+result carrying its own `reason`. Costs more than `search` (about 13s and 6–11
 credits for the first 50 results, against under 2s and 1), so it earns its keep
 once you have something to say about the person:
 
@@ -183,7 +183,7 @@ catch (err) {
 ```
 
 Common codes: `unauthorized`, `forbidden_scope` (this key cannot use Local
-Intelligence), `forbidden_tier` (`/featured` needs Growth or above),
+Intelligence), `forbidden_tier` (`/featured` needs Pro or above),
 `unsupported_city`, `invalid_request`, `rate_limited`, `insufficient_credits`.
 
 Credits are metered per delivered result, never per requested — a `limit` of 60

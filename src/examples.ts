@@ -167,7 +167,7 @@ const MILES = 1.60934;
 const client = new SyncSoClient();
 
 // === /search =============================================================
-// Fast and cheap: usually under 2s, 1 credit per 20 results.
+// Fast and cheap: usually under 2s, 1 credit per 50 results.
 //
 // Omitting `query` selects browse mode, where the filters are the intent
 // (example 3). A blank string is rejected on purpose: an empty search box
@@ -296,7 +296,7 @@ async function searchRankedAndPaged(): Promise<void> {
 
 // === /featured ===========================================================
 // The no-query endpoint, for surfaces where nobody has typed anything.
-// About 1s. Growth plan and above.
+// About 1s. Pro plan and above.
 
 /** 6. The whole request: a city. Nothing else is required. */
 async function featuredCity(): Promise<void> {
@@ -381,7 +381,7 @@ async function featuredPaged(): Promise<void> {
 // Ask what someone should do, in the words they would use. Everything on in
 // that window and area is read against the request -- a thousand rows and
 // more -- and comes back ranked, each result carrying a sentence you can
-// show verbatim. About 13s and 5-10 credits for the first 50 results, against
+// show verbatim. About 13s and 6-11 credits for the first 50 results, against
 // under 2s and 1 for search, so it earns its keep when you have something to
 // say about the person.
 //
@@ -570,7 +570,7 @@ try {
       console.error("This key lacks the `intelligence` scope — examples 11-15 need it.");
     }
     if (error.code === "forbidden_tier") {
-      console.error("/featured is Growth plan and above — examples 6-10 need it.");
+      console.error("/featured is Pro plan and above — examples 6-10 need it.");
     }
     if (error.code === "unauthorized") {
       console.error("Check SYNCSO_API_KEY in .env — it should start with rtdb_live_.");
