@@ -79,8 +79,8 @@ export class SyncSoClient {
    * to avoid, anything they cannot do. Do not split it into several calls,
    * and do not re-rank what comes back -- the order IS the reading.
    *
-   * Slower and dearer than search (about 13s and 6-11 credits for the first
-   * 50 results, +3 per further 50, against under 2s and 1), so it earns its
+   * Slower and dearer than search (about 15s and 6-11 credits for the first
+   * 50 results, +3 per further 50, against about a second and 1), so it earns its
    * keep when you have something to say about the person. See the manual's
    * section 7.4 for the price.
    */
@@ -102,7 +102,7 @@ export class SyncSoClient {
         ? (body as Record<string, unknown>)
         : { media: { images_per_result: 3 }, ...(body as Record<string, unknown>) };
 
-    // Local Intelligence takes about 13s and can run longer; a shorter
+    // Local Intelligence takes about 15s and can run longer; a shorter
     // timeout is self-inflicted failure.
     const response = await fetch(`${BASE}${path}`, {
       method: "POST",
