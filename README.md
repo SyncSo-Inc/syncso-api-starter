@@ -27,7 +27,7 @@ npm run examples -- intelligence  # the five /local-intelligence examples
 npm run examples -- 12            # just number 12
 ```
 
-**`/search`** — experiences and venues. Usually under 2s, 1 credit per 50 results.
+**`/search`** — experiences and venues. Under a second with a query, about 3s to browse; 1 credit per 50 results.
 
 | | | |
 |---|---|---|
@@ -37,7 +37,7 @@ npm run examples -- 12            # just number 12
 | 4 | Cocktail bars in Williamsburg | venues, and the widened-area check |
 | 5 | Live music after 9pm | ranking preferences, both result types, and page 2 by cursor |
 
-**`/featured`** — a curated pool per city, no query. About 1s. Pro
+**`/featured`** — a curated pool per city, no query. A second or two. Pro
 plan and above.
 
 | | | |
@@ -51,7 +51,7 @@ plan and above.
 **`/local-intelligence`** — ask what someone should do, in the words they
 would use. Everything on in that window and area is read against the request
 and comes back ranked, each result carrying a sentence you can show verbatim.
-About 13s, and 6-11 credits for the first 50 results.
+About 15s, and 6-11 credits for the first 50 results.
 
 One request is one call, however many interests it names, and the order it
 comes back in is the reading — do not split it, and do not re-rank it.
@@ -133,8 +133,8 @@ const results = await client.featured({
 ```
 
 `client.ask()` takes the request as a sentence and answers it ranked, each
-result carrying its own `reason`. Costs more than `search` (about 13s and 6–11
-credits for the first 50 results, against under 2s and 1), so it earns its keep
+result carrying its own `reason`. Costs more than `search` (about 15s and 6–11
+credits for the first 50 results, against about a second and 1), so it earns its keep
 once you have something to say about the person:
 
 ```ts
