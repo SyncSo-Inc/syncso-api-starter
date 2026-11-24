@@ -62,8 +62,8 @@ allergy, a dislike, "my parents are in their seventies and can't be on
 their feet long" — these are read and reasoned about, not matched as text,
 and they are where the best answers come from.
 
-An answer costs 4-7 credits for the first 50 results with reasons
-(8-12 seconds) and 2-4 without (3-6 seconds), and 2 for each further 50,
+An answer costs 3-6 credits for the first 50 results with reasons
+(8-12 seconds) and 2-3 without (3-6 seconds), and 2 for each further 50,
 on the work it actually did.
 
 Leave `limit` out: it is 20, and that is almost always the right ask. A
@@ -129,7 +129,8 @@ the user what you asked for. An answer that says a place is outside the
 area we cover is neither empty nor a failure: we cover New York and San Francisco only
 for now, and nothing was searched. Say that in a sentence, and do not
 search one of those in its place unless they ask for it. An answer that asks
-which city is a question for the user: ask it, then call again.
+which city, or which of two places you sent, is a question for the user: ask
+it, then call again with one place. Send `lat`/`lng` only for "near me".
 
 On `rate_limited`, wait the seconds given and retry. On
 `insufficient_credits` or `quota_exceeded`, stop and tell the user.
