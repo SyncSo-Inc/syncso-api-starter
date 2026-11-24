@@ -62,7 +62,7 @@ allergy, a dislike, "my parents are in their seventies and can't be on
 their feet long" — these are read and reasoned about, not matched as text,
 and they are where the best answers come from.
 
-An answer costs 3-6 credits for the first 50 results with reasons
+An answer costs 2-5 credits for the first 50 results with reasons
 (8-12 seconds) and 2-3 without (3-6 seconds), and 2 for each further 50,
 on the work it actually did.
 
