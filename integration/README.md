@@ -57,7 +57,7 @@ node --env-file=.env integration/execute.ts
 
 | Tool | What | Cost |
 |---|---|---|
-| `find_things_to_do` | The whole ask in one call — events, shows, classes, restaurants, bars, museums — ranked, each with a reason | 6-11 credits for the first 50 results |
+| `find_things_to_do` | The whole ask in one call — events, shows, classes, restaurants, bars, museums — ranked, each with a reason | 3-6 credits for the first 50 results (2-3 without reasons) |
 | `get_details` | Everything about results the user picked, several ids in one call | 1 credit per call |
 
 Two, deliberately. Every tool definition is re-sent on every model request
