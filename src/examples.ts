@@ -1,7 +1,8 @@
 /**
- * Four worked examples, run end to end against the live API.
+ * Fifteen worked examples, run end to end against the live API with the
+ * official SDK (`npm install @syncso/sdk`).
  *
- *   npm run examples          # all four
+ *   npm run examples          # all fifteen
  *   npm run examples -- 2     # just the second
  *
  * These are the same requests the public playground at syncso.com/demo
@@ -12,8 +13,9 @@
  * Each example prints the request first, then what came back, so the shape
  * of the body you would send is never a mystery.
  */
-import { coverImage, MissingApiKeyError, SyncSoClient, SyncSoError } from "./client.ts";
-import type { AskResponse, Experience, SearchResponse, Venue } from "./client.ts";
+import SyncSo, { SyncSoError } from "@syncso/sdk";
+import type { AskResponse, Experience, SearchResponse } from "@syncso/sdk";
+import { coverImage, price, requireKey, when, where } from "./print.ts";
 
 // ---------------------------------------------------------------------------
 // Time windows are wall-clock IN THE TARGET CITY and carry no UTC offset.
@@ -84,47 +86,13 @@ function head(n: number, title: string, endpoint: string, body: unknown): void {
   console.log("");
 }
 
-/** Times are wall-clock at the venue — slice the string, never parse it. */
-function when(exp: Experience): string {
-  const slot = exp.time.matched_timeslots[0]?.start ?? exp.time.next_start;
-  if (!slot?.local) return "Time TBA";
-  const [date, clock] = slot.local.split("T");
-  return exp.time.type === "exact_datetime" && clock
-    ? `${date} ${clock.slice(0, 5)}`
-    : (date ?? slot.local);
-}
-
-function price(exp: Experience): string {
-  if (!exp.price) return "";
-  if (exp.price.is_free) return "Free";
-  const { min, max } = exp.price;
-  if (min === null && max === null) return "";
-  return min !== null && max !== null && min !== max ? `$${min}-${max}` : `$${min ?? max}`;
-}
-
 function printExperiences(rows: Experience[]): void {
   rows.forEach((exp, i) => {
-    const where = exp.venue?.name ?? (exp.is_online ? "Online" : exp.neighborhood ?? "");
     console.log(`${i + 1}. ${exp.title}`);
-    console.log(`   ${[when(exp), where, price(exp)].filter(Boolean).join(" · ")}`);
-    // Local Intelligence explains itself; search has nothing to explain.
-    if (exp.match?.reason) console.log(`   why: ${exp.match.reason}`);
+    console.log(`   ${[when(exp), where(exp), price(exp)].filter(Boolean).join(" · ")}`);
     const image = coverImage(exp);
     if (image) console.log(`   image: ${image.url}`);
     if (exp.booking.primary_link) console.log(`   ${exp.booking.primary_link}`);
-    console.log("");
-  });
-}
-
-function printVenues(rows: Venue[]): void {
-  rows.forEach((venue, i) => {
-    console.log(`${i + 1}. ${venue.name}`);
-    console.log(`   ${[venue.venue_type?.replace(/_/g, " "), venue.neighborhood, venue.address]
-      .filter(Boolean)
-      .join(" · ")}`);
-    if (venue.match?.reason) console.log(`   why: ${venue.match.reason}`);
-    const image = coverImage(venue);
-    if (image) console.log(`   image: ${image.url}`);
     console.log("");
   });
 }
@@ -164,7 +132,8 @@ const MILES = 1.60934;
 // Five per endpoint, each showing something the previous one did not.
 // Everything here is a real, valid request body — nothing is illustrative.
 
-const client = new SyncSoClient();
+requireKey();
+const syncso = new SyncSo();
 
 // === /search =============================================================
 // Fast and cheap: under a second with a query, about 3s to browse; 1 credit per 50 results.
@@ -180,29 +149,27 @@ async function searchBasic(): Promise<void> {
     query: "live jazz",
     location: { city: "New York" },
     time_windows: [tonight()],
-    result_types: ["experiences"] as const,
     limit: 20,
   };
   head(1, "Search — live jazz tonight", "/search", body);
   const started = Date.now();
-  const res = await client.search(body);
+  const res = await syncso.search(body);
   printExperiences(res.experiences);
   if (!res.experiences.length) console.log("No results.\n");
   footer(res, started);
 }
 
-/** 2. Search a circle rather than a city. Results carry `distance_km`. */
+/** 2. Search a circle rather than a city. Results carry `distance_mi`. */
 async function searchRadius(): Promise<void> {
   const body = {
     query: "stand-up comedy",
     // A radius is only valid on a `point`, never alongside a city name.
     location: { point: { ...SOHO, radius_km: Number((3 * MILES).toFixed(2)) } },
-    result_types: ["experiences"] as const,
     limit: 20,
   };
   head(2, "Search — comedy within 3 miles of SoHo", "/search", body);
   const started = Date.now();
-  const res = await client.search(body);
+  const res = await syncso.search(body);
   printExperiences(res.experiences);
   if (!res.experiences.length) console.log("No results.\n");
   footer(res, started);
@@ -216,69 +183,67 @@ async function searchRadius(): Promise<void> {
  * verbatim is a bug on your side, so this API fails loudly rather than
  * quietly returning everything.
  *
- * A filter keeps only experiences whose attribute is recorded AND matches;
- * unknown is left out rather than guessed.
+ * Requirements are tag ids from GET /meta, and each is a must: an experience
+ * known not to fit is left out; one where it is not recorded stays, after
+ * every experience known to fit.
  */
 async function searchBrowse(): Promise<void> {
   const body = {
     location: { city: "New York" },
     time_windows: thisWeekend(),
-    result_types: ["experiences"] as const,
-    filters: { experiences: { is_free: true, environment_types: ["indoor"] as const } },
+    requirements: ["is_free:true", "environment_type:indoor"],
     limit: 20,
   };
   head(3, "Search — no query: free indoor things this weekend", "/search", body);
   const started = Date.now();
-  const res = await client.search(body);
+  const res = await syncso.search(body);
   printExperiences(res.experiences);
   if (!res.experiences.length) console.log("No results.\n");
   footer(res, started);
 }
 
-/** 4. Venues: a place that exists whether or not anything is scheduled. */
-async function searchVenues(): Promise<void> {
+/**
+ * 4. One neighbourhood. A neighbourhood covers its own ground and everything
+ * within five miles of its centre, nearest first.
+ */
+async function searchNeighbourhood(): Promise<void> {
   const body = {
-    query: "cocktail bar",
+    query: "cocktail tasting or bar trivia",
     location: { city: "New York", area_text: "Williamsburg" },
-    result_types: ["venues"] as const,
     limit: 20,
   };
-  head(4, "Search — cocktail bars in Williamsburg (venues)", "/search", body);
+  head(4, "Search — one neighbourhood: Williamsburg", "/search", body);
   const started = Date.now();
-  const res = await client.search(body);
-  printVenues(res.venues);
-  if (!res.venues.length) console.log("No results.\n");
+  const res = await syncso.search(body);
+  printExperiences(res.experiences);
+  if (!res.experiences.length) console.log("No results.\n");
 
-  // A neighborhood matching nothing widens to the whole city rather than
+  // A neighbourhood matching nothing widens to the whole city rather than
   // returning empty, so check before calling these "in Williamsburg".
-  const scope = res.meta.normalized?.area_scope ?? {};
+  const scope = (res.meta.normalized?.area_scope ?? {}) as Record<string, string>;
   if (Object.values(scope).includes("relaxed")) {
-    console.log(`Note: "${res.meta.normalized?.area_text}" matched nothing; widened to the whole city.\n`);
+    console.log(`Note: "${body.location.area_text}" matched nothing; widened to the whole city.\n`);
   }
   footer(res, started);
 }
 
 /**
- * 5. Ranking preferences, both result types at once, and paging. The lift is
- * bounded: relevance still carries most of the order.
+ * 5. Ranking preferences, and paging. The lift is bounded: relevance still
+ * carries most of the order.
  */
 async function searchRankedAndPaged(): Promise<void> {
   const body = {
     query: "live music",
     location: { city: "New York" },
     time_windows: [lateTonight()],
-    result_types: ["experiences", "venues"] as const,
     ranking: { prefer_popularity: true, prefer_uniqueness: true },
-    media: { images_per_result: 1, include_videos: false },
+    media: { images_per_result: 1 },
     limit: 3,
   };
-  head(5, "Search — popular and unusual, after 9pm, both types + page 2", "/search", body);
+  head(5, "Search — popular and unusual, after 9pm, then page 2", "/search", body);
   const started = Date.now();
-  const res = await client.search(body);
-  console.log("Experiences:");
+  const res = await syncso.search(body);
   printExperiences(res.experiences);
-  console.log("Venues:");
-  printVenues(res.venues);
   footer(res, started);
 
   // Page 2: the same body plus the cursor. The result set was frozen server
@@ -288,7 +253,7 @@ async function searchRankedAndPaged(): Promise<void> {
   if (cursor) {
     console.log("\n   … page 2, same body plus meta.next_cursor:\n");
     const t2 = Date.now();
-    const page2 = await client.search({ ...body, cursor });
+    const page2 = await syncso.search({ ...body, cursor });
     printExperiences(page2.experiences);
     footer(page2, t2);
   }
@@ -296,14 +261,14 @@ async function searchRankedAndPaged(): Promise<void> {
 
 // === /featured ===========================================================
 // The no-query endpoint, for surfaces where nobody has typed anything.
-// A second or two. Pro plan and above.
+// A second or two. Starter plan and above.
 
 /** 6. The whole request: a city. Nothing else is required. */
 async function featuredCity(): Promise<void> {
   const body = { location: { city: "New York" }, limit: 20 };
   head(6, "Featured — what is worth knowing in New York", "/featured", body);
   const started = Date.now();
-  const res = await client.featured(body);
+  const res = await syncso.featured(body);
   printExperiences(res.experiences);
   if (!res.experiences.length) console.log("No results.\n");
   footer(res, started);
@@ -314,7 +279,7 @@ async function featuredTonight(): Promise<void> {
   const body = { location: { city: "New York" }, time_windows: [tonight()], limit: 20 };
   head(7, "Featured — tonight only", "/featured", body);
   const started = Date.now();
-  const res = await client.featured(body);
+  const res = await syncso.featured(body);
   printExperiences(res.experiences);
   if (!res.experiences.length) console.log("No results.\n");
   footer(res, started);
@@ -330,7 +295,7 @@ async function featuredSoonest(): Promise<void> {
   };
   head(8, "Featured — soonest first (sort: time)", "/featured", body);
   const started = Date.now();
-  const res = await client.featured(body);
+  const res = await syncso.featured(body);
   printExperiences(res.experiences);
   if (!res.experiences.length) console.log("No results.\n");
   footer(res, started);
@@ -346,7 +311,7 @@ async function featuredWeekend(): Promise<void> {
   };
   head(9, "Featured — this weekend", "/featured", body);
   const started = Date.now();
-  const res = await client.featured(body);
+  const res = await syncso.featured(body);
   printExperiences(res.experiences);
   if (!res.experiences.length) console.log("No results.\n");
   footer(res, started);
@@ -360,7 +325,7 @@ async function featuredPaged(): Promise<void> {
   const body = { location: { city: "New York" }, time_windows: [tomorrow()], limit: 20 };
   head(10, "Featured — tomorrow, then page 2 by cursor", "/featured", body);
   const started = Date.now();
-  const res = await client.featured(body);
+  const res = await syncso.featured(body);
   printExperiences(res.experiences);
   footer(res, started);
 
@@ -368,7 +333,7 @@ async function featuredPaged(): Promise<void> {
   if (cursor) {
     console.log("\n   … page 2, same body plus meta.next_cursor:\n");
     const t2 = Date.now();
-    const page2 = await client.featured({ ...body, cursor });
+    const page2 = await syncso.featured({ ...body, cursor });
     printExperiences(page2.experiences);
     footer(page2, t2);
   } else {
@@ -377,13 +342,13 @@ async function featuredPaged(): Promise<void> {
   }
 }
 
-// === /local-intelligence =================================================
+// === /intelligence =======================================================
 // Ask what someone should do, in the words they would use. Everything on in
 // that window and area is read against the request -- a thousand rows and
 // more -- and comes back ranked, each result carrying a sentence you can
-// show verbatim. About 15s and 6-11 credits for the first 50 results, against
-// about a second and 1 for search, so it earns its keep when you have something to
-// say about the person.
+// show verbatim. About 8-12s and 2-5 credits (2-3 with `reasons: false`),
+// against about a second and 1 for search, so it earns its keep when you
+// have something to say about the person.
 //
 // Two rules the shape turns on: send the whole request as ONE `message`
 // however many interests it names, and show the results in the order given.
@@ -394,18 +359,18 @@ async function featuredPaged(): Promise<void> {
 function printAnswer(res: AskResponse): void {
   if (res.understood) console.log(`${res.understood}\n`);
   res.results.forEach((row, i) => {
-    const where = row.venue ?? row.neighborhood ?? "";
+    const place = [row.location?.name, row.location?.neighborhood].filter(Boolean).join(", ");
     const whenText = row.ongoing && row.end
       ? `on now, through ${row.end.slice(0, 10)}`
       : row.start?.slice(0, 16).replace("T", " ") ?? "";
     const cost = row.is_free ? "Free"
       : row.price_min != null ? `$${row.price_min}` : "";
     console.log(`${i + 1}. ${row.title}`);
-    console.log(`   ${[whenText, where, cost].filter(Boolean).join(" · ")}`);
+    console.log(`   ${[whenText, place, cost].filter(Boolean).join(" · ")}`);
     // The reason, not a placeholder -- rewriting it costs the reader the
     // reasoning, and writing your own from the title loses what the row says.
     if (row.reason) console.log(`   why: ${row.reason}`);
-    if (row.image) console.log(`   image: ${row.image}`);
+    if (row.images[0]) console.log(`   image: ${row.images[0]}`);
     if (row.link) console.log(`   ${row.link}`);
     console.log("");
   });
@@ -425,10 +390,10 @@ async function liThreeFriends(): Promise<void> {
       + "head. We like live music and bars and would rather not do anything formal.",
     limit: 10,
   };
-  head(11, "Local Intelligence — three friends, first time in NYC", "/local-intelligence", body);
-  console.log("(about 15s: reading the catalogue against this request)\n");
+  head(11, "Local Intelligence — three friends, first time in NYC", "/intelligence", body);
+  console.log("(about 10s: reading the catalogue against this request)\n");
   const started = Date.now();
-  const res = await client.ask(body);
+  const res = await syncso.intelligence(body);
   printAnswer(res);
   if (!res.results.length) console.log("No results.\n");
   footer(res, started);
@@ -449,9 +414,9 @@ async function liConstraints(): Promise<void> {
     place: "Lower East Side",
     limit: 10,
   };
-  head(12, "Local Intelligence — hard constraints, read not matched", "/local-intelligence", body);
+  head(12, "Local Intelligence — hard constraints, read not matched", "/intelligence", body);
   const started = Date.now();
-  const res = await client.ask(body);
+  const res = await syncso.intelligence(body);
   printAnswer(res);
   if (!res.results.length) console.log("No results.\n");
   footer(res, started);
@@ -474,10 +439,10 @@ async function liTwoWindows(): Promise<void> {
     when: thisWeekend(),
     limit: 10,
   };
-  head(13, "Local Intelligence — two windows, and the gap between them", "/local-intelligence", body);
+  head(13, "Local Intelligence — two windows, and the gap between them", "/intelligence", body);
   console.log("(two windows; the hours between them are not searched)\n");
   const started = Date.now();
-  const res = await client.ask(body);
+  const res = await syncso.intelligence(body);
   printAnswer(res);
   if (!res.results.length) console.log("No results.\n");
   footer(res, started);
@@ -494,9 +459,9 @@ async function liLandmark(): Promise<void> {
     radius_mi: 1,
     limit: 10,
   };
-  head(14, "Local Intelligence — a landmark, not a neighbourhood", "/local-intelligence", body);
+  head(14, "Local Intelligence — a landmark, not a neighbourhood", "/intelligence", body);
   const started = Date.now();
-  const res = await client.ask(body);
+  const res = await syncso.intelligence(body);
   printAnswer(res);
   if (!res.results.length) console.log("No results.\n");
   footer(res, started);
@@ -504,10 +469,10 @@ async function liLandmark(): Promise<void> {
 
 /** 15. The next page: the same body, plus the cursor. Nothing else changes. */
 async function liNextPage(): Promise<void> {
-  const body = { message: "what is on tonight", limit: 10 };
-  head(15, "Local Intelligence — the next page", "/local-intelligence", body);
+  const body = { message: "what is on tonight in the East Village", limit: 10 };
+  head(15, "Local Intelligence — the next page", "/intelligence", body);
   const started = Date.now();
-  const first = await client.ask(body);
+  const first = await syncso.intelligence(body);
   printAnswer(first);
   if (!first.next_cursor) {
     console.log("No further pages.\n");
@@ -515,7 +480,7 @@ async function liNextPage(): Promise<void> {
     return;
   }
   console.log(`--- page 2 (cursor ${first.next_cursor.slice(0, 12)}...) ---\n`);
-  const second = await client.ask({ ...body, cursor: first.next_cursor });
+  const second = await syncso.intelligence({ ...body, cursor: first.next_cursor });
   printAnswer(second);
   footer(second, started);
 }
@@ -523,7 +488,7 @@ async function liNextPage(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 const EXAMPLES = [
-  searchBasic, searchRadius, searchBrowse, searchVenues, searchRankedAndPaged,
+  searchBasic, searchRadius, searchBrowse, searchNeighbourhood, searchRankedAndPaged,
   featuredCity, featuredTonight, featuredSoonest, featuredWeekend, featuredPaged,
   liThreeFriends, liConstraints, liTwoWindows, liLandmark, liNextPage,
 ];
@@ -551,7 +516,7 @@ Usage: npm run examples [-- <n> | search | featured | intelligence]
   npm run examples -- 3             just example 3
   npm run examples -- search        the five /search examples
   npm run examples -- featured      the five /featured examples
-  npm run examples -- intelligence  the five /local-intelligence examples
+  npm run examples -- intelligence  the five /intelligence examples
 `);
   process.exit(1);
 }
@@ -561,16 +526,14 @@ try {
   console.log(`\n${RULE}\nSee these running in a browser: https://syncso.com/demo`);
   console.log(`The full manual: https://syncso.com/partner-api\n`);
 } catch (error) {
-  if (error instanceof MissingApiKeyError) {
-    console.error(`\n${error.message}`);
-  } else if (error instanceof SyncSoError) {
+  if (error instanceof SyncSoError) {
     console.error(`\nError [${error.code}]: ${error.message}`);
     console.error(`Request id: ${error.requestId}`);
     if (error.code === "forbidden_scope") {
       console.error("This key lacks the `intelligence` scope — examples 11-15 need it.");
     }
     if (error.code === "forbidden_tier") {
-      console.error("/featured is Pro plan and above — examples 6-10 need it.");
+      console.error("/featured is Starter plan and above — examples 6-10 need it.");
     }
     if (error.code === "unauthorized") {
       console.error("Check SYNCSO_API_KEY in .env — it should start with rtdb_live_.");
