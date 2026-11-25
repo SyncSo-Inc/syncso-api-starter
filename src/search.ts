@@ -4,8 +4,8 @@
  *   npm run search -- "live jazz" "New York"
  *   npm run search -- "free museum exhibitions" "New York" --free
  */
-import { coverImage, MissingApiKeyError, SyncSoClient, SyncSoError } from "./client.ts";
-import type { Experience } from "./client.ts";
+import SyncSo, { SyncSoError } from "@syncso/sdk";
+import { coverImage, price, requireKey, when, where } from "./print.ts";
 
 const [query, city, ...flags] = process.argv.slice(2);
 
@@ -22,66 +22,33 @@ Usage: npm run search -- <query> <city> [--free] [--limit N]
 const limitAt = flags.indexOf("--limit");
 const limit = limitAt >= 0 ? Number(flags[limitAt + 1]) : 20;
 
-/**
- * Times are wall-clock AT THE VENUE. The string is sliced rather than passed
- * to Date on purpose: `new Date("2026-09-05T21:30:00")` is read in the
- * runtime's zone, so an 8pm New York show would print as 5pm in California.
- */
-function when(exp: Experience): string {
-  const slot = exp.time.matched_timeslots[0]?.start ?? exp.time.next_start;
-  if (!slot?.local) return "Time TBA";
-  const [date, clock] = slot.local.split("T");
-  // A date_only event has no real clock time — printing 12:00 AM would
-  // invent a precision the source never had.
-  return exp.time.type === "exact_datetime" && clock
-    ? `${date} ${clock.slice(0, 5)}`
-    : (date ?? slot.local);
-}
-
-function price(exp: Experience): string {
-  if (!exp.price) return "";
-  if (exp.price.is_free) return "Free";
-  const { min, max } = exp.price;
-  if (min === null && max === null) return "";
-  return min !== null && max !== null && min !== max ? `$${min}-${max}` : `$${min ?? max}`;
-}
+requireKey();
+const syncso = new SyncSo();
 
 try {
-  const client = new SyncSoClient();
-  const results = await client.search({
+  const results = await syncso.search({
     query,
     location: { city },
     limit,
-    ...(flags.includes("--free") ? { filters: { experiences: { is_free: true } } } : {}),
+    // Requirements are tag ids from GET /meta; each one is a must.
+    ...(flags.includes("--free") ? { requirements: ["is_free:true"] } : {}),
   });
 
   results.experiences.forEach((exp, i) => {
-    const where = exp.venue?.name ?? (exp.is_online ? "Online" : exp.neighborhood ?? "");
     console.log(`\n${i + 1}. ${exp.title}`);
-    console.log(`   ${[when(exp), where, price(exp)].filter(Boolean).join(" · ")}`);
+    console.log(`   ${[when(exp), where(exp), price(exp)].filter(Boolean).join(" · ")}`);
     const image = coverImage(exp);
     if (image) console.log(`   image: ${image.url}`);
     if (exp.booking.primary_link) console.log(`   ${exp.booking.primary_link}`);
   });
 
-  if (results.experiences.length === 0) console.log("\nNo results.");
+  if (results.meta.out_of_area) console.log(`\n${results.meta.coverage?.message}`);
+  else if (results.experiences.length === 0) console.log("\nNo results.");
 
-  // If the area was relaxed, these rows are city-wide — saying otherwise
-  // would tell the user something untrue.
-  const scope = results.meta.normalized?.area_scope ?? {};
-  if (Object.values(scope).includes("relaxed")) {
-    console.log(`\nNote: "${results.meta.normalized?.area_text}" matched nothing; widened to the whole city.`);
-  }
-
-  console.log(`\n— ${results.meta.credits_charged ?? "?"} credit(s) · ${results.request_id}`);
+  console.log(`\n— ${results.meta.credits_charged} credit(s) · ${results.request_id}`);
 } catch (error) {
-  if (error instanceof MissingApiKeyError) {
-    console.error(`\n${error.message}`);
-  } else if (error instanceof SyncSoError) {
-    console.error(`\nError [${error.code}]: ${error.message}`);
-    console.error(`Request id: ${error.requestId}`);
-  } else {
-    throw error;
-  }
+  if (!(error instanceof SyncSoError)) throw error;
+  console.error(`\nError [${error.code}]: ${error.message}`);
+  console.error(`Request id: ${error.requestId}`);
   process.exit(1);
 }

@@ -1,7 +1,11 @@
 # SyncSo API Starter
 
-Search live events, shows, classes and venues across major US cities with the
-SyncSo Partner API.
+An example app for the [SyncSo API](https://syncso.com/partner-api): live
+events, shows and classes across New York and the San Francisco Bay Area,
+built on the official SDK, [`@syncso/sdk`](https://www.npmjs.com/package/@syncso/sdk).
+
+Only want the client? `npm install @syncso/sdk` (or `pip install syncso`) —
+see [syncso-sdk](https://github.com/SyncSo-Inc/syncso-sdk).
 
 **[API documentation](https://syncso.com/partner-api)** ·
 **[Interactive explorer](https://rtdb.syncso.com/partner/docs)**
@@ -9,12 +13,12 @@ SyncSo Partner API.
 ```bash
 git clone https://github.com/SyncSo-Inc/syncso-api-starter.git
 cd syncso-api-starter
+npm install
 cp .env.example .env          # add your key
 npm run examples
 ```
 
-No dependencies and no build step — Node runs the TypeScript directly.
-Needs Node 23.6 or newer.
+No build step — Node runs the TypeScript directly. Needs Node 23.6 or newer.
 
 Fifteen worked examples against the live API, five per endpoint. Run a set or
 a single one:
@@ -23,21 +27,21 @@ a single one:
 npm run examples                  # all fifteen
 npm run examples -- search        # the five /search examples
 npm run examples -- featured      # the five /featured examples
-npm run examples -- intelligence  # the five /local-intelligence examples
+npm run examples -- intelligence  # the five /intelligence examples
 npm run examples -- 12            # just number 12
 ```
 
-**`/search`** — experiences and venues. Under a second with a query, about 3s to browse; 1 credit per 50 results.
+**`/search`** — events and things to do. Under a second with a query, about 3s to browse; 1 credit per 50 results.
 
 | | | |
 |---|---|---|
 | 1 | Live jazz tonight | the plain case |
-| 2 | Comedy within 3 miles of SoHo | a circle instead of a city; results carry `distance_km` |
+| 2 | Comedy within 3 miles of SoHo | a circle instead of a city; results carry `distance_mi` |
 | 3 | Free indoor things this weekend | **no query at all** — the filters are the intent |
-| 4 | Cocktail bars in Williamsburg | venues, and the widened-area check |
-| 5 | Live music after 9pm | ranking preferences, both result types, and page 2 by cursor |
+| 4 | Cocktails and trivia in Williamsburg | one neighbourhood, and the widened-area check |
+| 5 | Live music after 9pm | ranking preferences, and page 2 by cursor |
 
-**`/featured`** — a curated pool per city, no query. A second or two. Pro
+**`/featured`** — a curated pool per city, no query. A second or two. Starter
 plan and above.
 
 | | | |
@@ -48,7 +52,7 @@ plan and above.
 | 9 | This weekend | a weekend module, two windows |
 | 10 | Tomorrow, then page 2 | cursor paging, and the pool's real size |
 
-**`/local-intelligence`** — ask what someone should do, in the words they
+**`/intelligence`** — ask what someone should do, in the words they
 would use. Everything on in that window and area is read against the request
 and comes back ranked, each result carrying a sentence you can show verbatim.
 About 8-12s and 2-5 credits for the first 50 results with reasons; with
@@ -66,7 +70,7 @@ comes back in is the reading — do not split it, and do not re-rank it.
 | 15 | What is on tonight, then page 2 | the same body plus the cursor |
 
 Each prints its request body, then the results, then latency and credits.
-Examples 6-10 need the Pro plan or above; 11-15 need the `intelligence` scope.
+Examples 6-10 need the Starter plan or above; 11-15 need the `intelligence` scope.
 
 ```
 3. Roy Hargrove Big Band Monthly Residency
@@ -77,10 +81,10 @@ Examples 6-10 need the Pro plan or above; 11-15 need the `intelligence` scope.
 — 1.2s · 1 credit(s) · req_3f9c2a7b1d4e6f80
 ```
 
-Every request asks for images by default (`media.images_per_result: 3`), and
-`coverImage(row)` picks the one to lead with. Pass your own `media` to change
-it. About 9 in 10 experiences carry at least one image; venue image URLs are
-presigned and expire, so fetch them rather than storing the URL.
+Every result carries up to three images by default (`media.images_per_result`),
+and `coverImage(exp)` in [`src/print.ts`](src/print.ts) picks the one to lead
+with. Some image URLs are presigned and expire, so fetch them rather than
+storing the URL.
 
 Local Intelligence adds a reason to every result:
 
@@ -99,47 +103,49 @@ npm run search -- "live jazz" "New York"
 npm run search -- "free museum exhibitions" "New York" --free
 ```
 
-Need a key? Request one at [syncso.com/partner-api](https://syncso.com/partner-api).
+Need a key? Create one in the [API console](https://syncso.com/console).
 
 ## The code
 
-**[`src/client.ts`](src/client.ts)** is the part to copy — one file, no
-dependencies. [`src/examples.ts`](src/examples.ts) is the fifteen examples,
-[`src/search.ts`](src/search.ts) the CLI.
+The client is the SDK — `import SyncSo from "@syncso/sdk"`. What this repo
+adds is [`src/examples.ts`](src/examples.ts), the fifteen examples,
+[`src/search.ts`](src/search.ts), the CLI, and [`src/print.ts`](src/print.ts),
+the few lines that turn a result into something to show.
 
 ```ts
-const client = new SyncSoClient();
+import SyncSo from "@syncso/sdk";
 
-const results = await client.search({
+const syncso = new SyncSo(); // reads SYNCSO_API_KEY
+
+const results = await syncso.search({
   query: "rooftop cocktails with a view",
   location: { city: "New York" },
   time_windows: [{ start: "2026-09-05T18:00", end: "2026-09-05T23:59" }],
-  result_types: ["experiences", "venues"],
   ranking: { prefer_popularity: true },
 });
 
 for (const exp of results.experiences) {
-  console.log(exp.title, exp.venue?.name, exp.booking.primary_link);
+  console.log(exp.title, exp.location?.name, exp.booking.primary_link);
 }
 ```
 
-`client.featured()` takes no query — a location is the whole request:
+`syncso.featured()` takes no query — a location is the whole request:
 
 ```ts
-const results = await client.featured({
+const results = await syncso.featured({
   location: { city: "New York" },
   time_windows: [{ start: "2026-09-05T18:00", end: "2026-09-05T23:59" }],
   sort: "time",          // or "score", the default
 });
 ```
 
-`client.ask()` takes the request as a sentence and answers it ranked, each
-result carrying its own `reason`. Costs more than `search` (about 8–12s and 2–5
-credits for the first 50 results, against about a second and 1), so it earns its keep
-once you have something to say about the person:
+`syncso.intelligence()` takes the request as a sentence and answers it ranked,
+each result carrying its own `reason`. Costs more than `search` (about 8–12s
+and 2–5 credits for the first 50 results, against about a second and 1), so it
+earns its keep once you have something to say about the person:
 
 ```ts
-const answer = await client.ask({
+const answer = await syncso.intelligence({
   message:
     "Six friends want somewhere to celebrate a birthday this weekend. Two " +
     "are vegan, one uses a wheelchair so step-free access is required. They " +
@@ -155,21 +161,23 @@ for (const row of answer.results) {        // in this order
 
 Put everything you know in `message`, including what no search could express
 — a wheelchair, an allergy, a dislike. Those are read and reasoned about, and
-they are the most useful thing you can send.
+they are the most useful thing you can send. `syncso.intelligenceStream()`
+gives the same answer one result at a time, as it is decided.
 
 ## Four things that trip people up
 
-**Omit `query` to browse; a blank one is a `422`.** With no `query` the filters
-are the intent (example 3). An empty string is rejected on purpose — an empty
-search box forwarded verbatim is a bug on your side.
+**Omit `query` to browse; a blank one is a `422`.** With no `query` the
+requirements are the intent (example 3). An empty string is rejected on
+purpose — an empty search box forwarded verbatim is a bug on your side.
 
 **Time windows are local to the target city, with no offset.** Send
 `"2026-09-05T19:00"`, never `toISOString()` — a trailing `Z` is rejected.
 
-**Response times are wall-clock at the venue**, as `{ local, timezone }`. Put
-`local` into a `Date` and an 8pm New York show reads as 5pm in California.
+**Response times are wall-clock at the venue**, as a string with no offset,
+and the zone is in `time.timezone`. Put one into a `Date` and an 8pm New York
+show reads as 5pm in California.
 
-**A neighborhood that matches nothing widens to the whole city.** Check
+**A neighbourhood that matches nothing widens to the whole city.** Check
 `meta.normalized.area_scope` before telling anyone results are "in Williamsburg".
 
 ## Errors
@@ -177,17 +185,18 @@ search box forwarded verbatim is a bug on your side.
 ```ts
 catch (err) {
   if (err instanceof SyncSoError) {
-    err.code;       // "unsupported_city"
+    err.code;       // "forbidden_tier"
     err.requestId;  // quote this to support
   }
 }
 ```
 
 Common codes: `unauthorized`, `forbidden_scope` (this key cannot use Local
-Intelligence), `forbidden_tier` (`/featured` needs Pro or above),
-`unsupported_city`, `invalid_request`, `rate_limited`, `insufficient_credits`.
+Intelligence), `forbidden_tier` (`/featured` needs Starter or above),
+`invalid_request`, `rate_limited`, `quota_exceeded`, `insufficient_credits`.
+The SDK retries rate limits and server errors on its own; the rest are yours.
 
-Credits are metered per delivered result, never per requested — a `limit` of 60
+Credits are metered per delivered result, never per requested — a `limit` of 50
 that returns 4 rows costs 1 credit. Every response reports its own cost in
 `meta.credits_charged`.
 
@@ -243,5 +252,5 @@ frameworks that do not speak MCP. See
 |---|---|
 | **API manual** | [syncso.com/partner-api](https://syncso.com/partner-api) |
 | **Interactive explorer** | [rtdb.syncso.com/partner/docs](https://rtdb.syncso.com/partner/docs) |
-| **Base URL** | `https://rtdb.syncso.com/partner/api/v1` |
+| **Base URL** | `https://api.syncso.com/v1` |
 | **MCP endpoint** | `https://rtdb.syncso.com/partner/mcp` |
