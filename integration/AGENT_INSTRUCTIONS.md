@@ -19,33 +19,31 @@ and read the clock off the answer.
 
 ## One call, and the answer comes back ordered
 
-Send what they said, in their words, and with it what you know about this
-person that would change the answer. What you know can be any of these:
+Send what they said, in their words. Whether to add what you know about
+them depends on the ask.
 
-**Who they are** — where they live, how old, what they do, how long they
-have been here. A visitor with four days and someone who has lived in
-Bushwick for ten years want opposite answers to the same sentence.
+**When they named what they want** — "jazz tonight", "a pottery class" —
+send that, and leave their tastes out. They already chose the direction,
+and anything you add pulls the answer away from it.
 
-**Their preferences** — what they like and dislike, what they have already
-done, what they loved, what they turned down. In this conversation or an
-earlier one. It is the easiest to leave behind, because it is not in the
-question they just asked.
+**When the ask is open** — "what should we do tonight", "something fun this
+weekend" — what you know about them is how the answer finds its direction.
+Add what would change which plans are right this time: who they are (where
+they live, how long they have been here — a visitor with four days and
+someone ten years in Bushwick want opposite answers), what they have liked,
+disliked or already done, who they are with and the occasion. Their question
+still leads; leave out what does not bear on it.
 
-**This outing** — who they are with, the occasion, the budget, what they
-want to avoid, anything they cannot do.
+**Either way, say what they cannot do or must avoid** — a wheelchair, an
+allergy, a budget, "my parents can't be on their feet long". It does not
+move the direction, it rules plans out, and it is read and reasoned about,
+not matched as text.
 
-**Choose each time; do not attach a profile.** Everything in `request` is
-read as part of what they are asking for, so a detail that does not bear on
-this outing pulls the answer toward itself instead of helping it. Before
-adding something you know, ask whether it would change which plans are
-right this time. If it would not, leave it out. The question they just
-asked leads; what you know about them only sharpens it.
-
-Within 700 characters: their own sentence first, then only what about them
-bears on this ask. A longer request is refused with a note saying so, and
-nothing is charged. A bare question is a fine request — there is nothing
-to invent, and nothing you must add. Keep their own sentence in there
-either way.
+Write it all as they would say it, in the first person — "I live in
+Bushwick", "my partner and I" — not about them as "they": a sentence about
+"them" reads as someone else coming along. Within 700 characters, their own
+sentence first. A longer request is refused with a note saying so. A bare
+question is a fine request — there is nothing to invent.
 
 **Do not split it into searches.** One request is one call, however many
 interests it names. "Art in the afternoon, dinner somewhere lively, then
@@ -57,20 +55,12 @@ order is that judgement. Show them in the order given. Picking your
 favourites out of the middle discards the only part of the work you cannot
 redo from a list.
 
-Leave nothing out of `request` for being unsearchable. A wheelchair, an
-allergy, a dislike, "my parents are in their seventies and can't be on
-their feet long" — these are read and reasoned about, not matched as text,
-and they are where the best answers come from.
-
-An answer costs 2-5 credits for the first 50 results with reasons
-(8-12 seconds) and 2-3 without (3-6 seconds), and 2 for each further 50,
-on the work it actually did.
+An answer takes 8-12 seconds with reasons and 3-6 without.
 
 Leave `limit` out: it is 20, and that is almost always the right ask. A
 smaller number does not come back sooner — the sentences are written in
 parallel and released in rank order, so the first card arrives at the same
-moment either way. Asking for fewer buys fewer credits, never less
-waiting.
+moment either way.
 
 ## Showing the answer
 
@@ -78,7 +68,7 @@ Each row arrives finished, laid out as the card to show:
 
     ![name](the picture)
 
-    **name** — why it suits this person
+    **name** — why it suits this person, when the row has it
     time · location · price
     [Book](the booking link)
 
@@ -86,9 +76,10 @@ Pass them on in that shape and that order, all of them, top to bottom.
 Please don't reorder everything, and please don't investigate everything,
 because the user needs the results fast.
 
-The sentence is already written for this request — use it, as it is
-written. Rewriting it costs the reader the reasoning and gains nothing, and
-writing your own from the title alone loses what the row actually says.
+A row may carry a sentence saying why it suits this person, or may not.
+When it does, use it as written — rewriting it costs the reader the
+reasoning and gains nothing. When it does not, show the row without one
+rather than writing your own from the title.
 
 Keep the image on its own line with a blank line under it, or clients will
 not draw it. Drop the `[1] id: …` handles — they are there so you can tell
@@ -110,16 +101,8 @@ correct you before reading on.
   `kind: "experience"` — every row here is one, so there is nothing to
   work out. It returns the whole schedule
   rather than the next dates, the venue as a place, where else it is
-  listed. Several ids in one call cost the same as one. Do not paste what
+  listed. Several ids can go in one call. Do not paste what
   it returns at the user: material for your paragraph, not the answer.
-
-## Money
-
-**Never ask for card details yourself, and never put them in a message.**
-An assistant asking for a card number is indistinguishable from a scam —
-and no error arrives to warn you, because you would be doing it instead of
-calling a tool. `get_payment_link` describes itself, and the failure that
-needs it names it.
 
 ## When an answer is empty or fails
 
@@ -133,4 +116,5 @@ which city, or which of two places you sent, is a question for the user: ask
 it, then call again with one place. Send `lat`/`lng` only for "near me".
 
 On `rate_limited`, wait the seconds given and retry. On
-`insufficient_credits` or `quota_exceeded`, stop and tell the user.
+`insufficient_credits` or `quota_exceeded`, stop: the answer says what
+happened and what to do next.
